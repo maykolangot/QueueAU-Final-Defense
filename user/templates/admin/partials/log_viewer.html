@@ -1,0 +1,48 @@
+<!-- templates/admin/log_viewer.html -->
+{% extends "admin/dashboard-admin.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <h2 class="mb-4">System Logs</h2>
+
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-6">
+            <label for="query" class="form-label">Search</label>
+            <input type="text" name="q" id="query" class="form-control" placeholder="Search logs..." value="{{ query }}">
+        </div>
+
+        <div class="col-md-4">
+            <label for="level" class="form-label">Log Level</label>
+            <select name="level" id="level" class="form-select">
+                <option value="">All Levels</option>
+                <option value="DEBUG" {% if level == 'DEBUG' %}selected{% endif %}>DEBUG</option>
+                <option value="INFO" {% if level == 'INFO' %}selected{% endif %}>INFO</option>
+                <option value="WARNING" {% if level == 'WARNING' %}selected{% endif %}>WARNING</option>
+                <option value="ERROR" {% if level == 'ERROR' %}selected{% endif %}>ERROR</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Apply</button>
+        </div>
+    </form>
+
+    <div class="bg-light border rounded p-3" style="max-height: 600px; overflow-y: auto; font-family: monospace; font-size: 0.875rem;">
+        {% for log in logs %}
+            {% if "DEBUG" in log %}
+                <div class="text-success border-bottom py-1">{{ log }}</div>
+            {% elif "INFO" in log %}
+                <div class="text-primary border-bottom py-1">{{ log }}</div>
+            {% elif "WARNING" in log %}
+                <div class="text-warning border-bottom py-1">{{ log }}</div>
+            {% elif "ERROR" in log %}
+                <div class="text-danger border-bottom py-1">{{ log }}</div>
+            {% else %}
+                <div class="border-bottom py-1">{{ log }}</div>
+            {% endif %}
+        {% empty %}
+            <div class="text-muted">No logs found.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

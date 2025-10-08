@@ -1,0 +1,184 @@
+<div>
+    <div class="card mb-4 shadow-sm rounded-3">
+      <div class="card-body">
+        <h5 class="card-title text-primary mb-3">Filter Transactions</h5>
+        <div class="row g-3">
+          <!-- Date Filter -->
+          <div class="col-md-3">
+            <label for="filter-date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="filter-date" name="date"
+                   value="{{ request.GET.date|default_if_none:'' }}">
+          </div>
+  
+          <!-- Department Filter -->
+          <div class="col-md-3">
+            <label for="filter-department" class="form-label">Department</label>
+            <select class="form-select" id="filter-department">
+              <option value="">-- Select Department --</option>
+              {% for dept in departments %}
+                <option value="{{ dept.id }}"
+                  {% if dept.id|stringformat:"s" == request.GET.department %}selected{% endif %}>
+                  {{ dept.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+  
+          <!-- Course Filter -->
+          <div class="col-md-3">
+            <label for="filter-course" class="form-label">Course</label>
+            <select class="form-select" id="filter-course">
+              <option value="">-- Select Course --</option>
+              {% for course in courses %}
+                <option value="{{ course.id }}"
+                  {% if course.id|stringformat:"s" == request.GET.course %}selected{% endif %}>
+                  {{ course.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+  
+          <!-- Campus Filter -->
+          <div class="col-md-3">
+            <label for="filter-campus" class="form-label">Campus</label>
+            <select class="form-select" id="filter-campus">
+              <option value="">-- Select Campus --</option>
+              <option value="Main" {% if request.GET.campus == "Main" %}selected{% endif %}>Main</option>
+              <option value="South" {% if request.GET.campus == "South" %}selected{% endif %}>South</option>
+              <option value="San Jose" {% if request.GET.campus == "San Jose" %}selected{% endif %}>San Jose</option>
+            </select>
+          </div>
+        </div>
+  
+        <!-- Action Buttons -->
+        <div class="mt-4 d-flex justify-content-end gap-3">
+          <button class="btn btn-sm btn-outline-secondary" onclick="clearCashierFilters()">Clear Filters</button>
+          <button type="button" class="btn btn-sm btn-primary" onclick="applyCashierFilters()">Apply Filters</button>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Transactions Table -->
+    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+      <table class="table table-striped table-hover">
+        <thead class="table-light sticky-top">
+          <tr>
+            <th>Queue #</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in transactions %}
+          <tr>
+            <td>{{ txn.queueNumber }}</td>
+            <td>{{ txn.transactionType }}</td>
+            <td>{{ txn.get_status_display }}</td>
+            <td>{{ txn.created_at }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center text-muted">No transactions found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Script Section -->
+  <script>
+  function applyCashierFilters() {
+    const params = new URLSearchParams();
+    const date = document.getElementById("filter-date").value;
+    const dept = document.getElementById("filter-department").value;
+    const course = document.getElementById("filter-course").value;
+    const campus = document.getElementById("filter-campus").value;
+  
+    if (date) params.append("date", date);
+    if (dept) params.append("department", dept);
+    if (course) params.append("course", course);
+    if (campus) params.append("campus", campus);
+  
+    window.location.search = params.toString();
+  }
+  
+  function clearCashierFilters() {
+    window.location.search = "";
+  }
+  
+  // Update course options when department changes
+  document.getElementById("filter-department").addEventListener("change", function () {
+    const deptId = this.value;
+    const courseSelect = document.getElementById("filter-course");
+  
+    courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+  
+    if (!deptId) return;
+  
+    fetch(`/admin/dashboard/cashiers/ajax?department_id=${deptId}`)
+      .then(response => response.json())
+      .then(data => {
+        data.courses.forEach(course => {
+          const option = document.createElement("option");
+          option.value = course.id;
+          option.textContent = course.name;
+          courseSelect.appendChild(option);
+        });
+      });
+  });
+  
+  // Prepopulate course dropdown if department was preselected
+  window.addEventListener("DOMContentLoaded", () => {
+    const deptSelect = document.getElementById("filter-department");
+    const courseSelect = document.getElementById("filter-course");
+    const selectedCourseId = "{{ request.GET.course|default:'' }}";
+  
+    if (deptSelect.value) {
+      fetch(`/admin/dashboard/cashiers/ajax?department_id=${deptSelect.value}`)
+        .then(res => res.json())
+        .then(data => {
+          courseSelect.innerHTML = '<option value="">-- Select Course --</option>';
+          data.courses.forEach(course => {
+            const option = document.createElement("option");
+            option.value = course.id;
+            option.textContent = course.name;
+            if (selectedCourseId === String(course.id)) {
+              option.selected = true;
+            }
+            courseSelect.appendChild(option);
+          });
+        });
+    }
+  });
+  </script>
+  
+
+<!-- Custom Styles -->
+<style>
+    /* Sticky header */
+    thead.sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background-color: #fff; /* White background to ensure readability */
+    }
+
+    /* Optional: Add border to table for visual clarity */
+    table {
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f8f9fa;
+    }
+</style>
+
+
+

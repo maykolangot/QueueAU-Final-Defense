@@ -1,0 +1,617 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recover QR Code - QueueAU</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #002147;
+      --secondary-blue: #003366;
+      --accent-yellow: #ffc107;
+      --accent-gold: #f7b731;
+      --light-blue: #e3f2fd;
+      --dark-blue: #001a33;
+      --glass-bg: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --shadow-light: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --shadow-medium: 0 12px 40px rgba(0, 0, 0, 0.15);
+      --shadow-heavy: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-image: url("{% static 'images/bg.png' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Background overlay to match register_student.html */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, 
+        rgba(0, 33, 71, 0.75) 0%, 
+        rgba(0, 51, 102, 0.7) 25%, 
+        rgba(4, 52, 100, 0.7) 45%, 
+        rgba(247, 183, 49, 0.65) 75%, 
+        rgba(247, 211, 12, 0.7) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .recover-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      z-index: 2;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .recover-form-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      max-width: 500px;
+    }
+
+    .recover-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      padding: 3rem 3.5rem;
+      border-radius: 20px;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      overflow: hidden;
+      animation: slideInUp 0.8s ease-out;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .recover-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--accent-yellow);
+    }
+
+
+
+    .recover-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      margin-top: 1rem;
+    }
+
+    .recover-header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--primary-blue);
+      margin-bottom: 0.5rem;
+    }
+
+    .recover-header .highlight {
+      color: var(--accent-yellow);
+    }
+
+    .recover-header p {
+      color: #718096;
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+
+    .qr-icon {
+      font-size: 3rem;
+      color: var(--accent-yellow);
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: var(--primary-blue);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a0aec0;
+      transition: color 0.3s ease;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 1rem 1rem 1rem 3rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent-yellow);
+      box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
+      background: rgba(255, 255, 255, 1);
+    }
+
+    .form-group input:focus + i {
+      color: var(--accent-yellow);
+    }
+
+    /* Error styling */
+    .errorlist {
+      list-style: none;
+      margin-top: 0.5rem;
+    }
+
+    .errorlist li {
+      color: #e53e3e;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.5rem;
+      background: rgba(229, 62, 62, 0.1);
+      border-radius: 8px;
+      border-left: 3px solid #e53e3e;
+      margin-bottom: 0.5rem;
+    }
+
+    .recover-button {
+      width: 100%;
+      padding: 1rem;
+      background: var(--primary-blue);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: var(--shadow-light);
+    }
+
+    .recover-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .recover-button:hover::before {
+      left: 100%;
+    }
+
+    .recover-button:hover {
+      background: var(--secondary-blue);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .recover-button:active {
+      transform: translateY(0);
+    }
+
+    .back-to-registration {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .back-to-registration a {
+      color: var(--primary-blue);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-to-registration a:hover {
+      color: var(--accent-yellow);
+      text-decoration: underline;
+    }
+
+    /* Responsive design */
+    @media (max-width: 1200px) {
+      .recover-form-section {
+        padding: 2rem;
+        max-width: 450px;
+      }
+      
+      .recover-card {
+        padding: 2.5rem 3rem;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .recover-form-section {
+        padding: 2rem;
+        max-width: 400px;
+      }
+      
+      .recover-card {
+        padding: 2.5rem 2rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      
+      .form-group input {
+        padding: 0.875rem 0.875rem 0.875rem 2.75rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .recover-container {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+      }
+      
+      .recover-form-section {
+        max-width: 100%;
+        padding: 1rem;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+      }
+      
+      .recover-card {
+        padding: 2rem 1.5rem;
+        max-width: 400px;
+        margin: 0 auto;
+        border-radius: 15px;
+      }
+      
+      .recover-header h1 {
+        font-size: 1.8rem;
+        line-height: 1.2;
+        margin-bottom: 0.75rem;
+      }
+      
+      .recover-header p {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin-bottom: 1.5rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+      
+      .form-group input {
+        padding: 0.875rem 0.875rem 0.875rem 2.5rem;
+        font-size: 0.95rem;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.9rem;
+        left: 0.75rem;
+      }
+      
+      .recover-button {
+        padding: 0.875rem;
+        font-size: 0.95rem;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .recover-container {
+        padding: 0.5rem;
+      }
+      
+      .recover-form-section {
+        padding: 0.5rem;
+      }
+      
+      .recover-card {
+        padding: 1.5rem 1rem;
+        margin: 0.5rem;
+        border-radius: 12px;
+      }
+      
+      .recover-header h1 {
+        font-size: 1.6rem;
+        margin-bottom: 0.75rem;
+      }
+      
+      .recover-header p {
+        font-size: 0.85rem;
+        margin-bottom: 1.25rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      
+      .form-group label {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .form-group input {
+        padding: 0.75rem 0.75rem 0.75rem 2.25rem;
+        font-size: 0.9rem;
+        border-radius: 8px;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.85rem;
+        left: 0.625rem;
+      }
+      
+      .recover-button {
+        padding: 0.875rem;
+        font-size: 0.9rem;
+        border-radius: 8px;
+      }
+      
+      .back-to-registration {
+        margin-top: 1.5rem;
+      }
+    }
+    
+    @media (max-width: 375px) {
+      .recover-container {
+        padding: 0.25rem;
+      }
+      
+      .recover-card {
+        padding: 1.25rem 0.75rem;
+        margin: 0.25rem;
+        border-radius: 10px;
+      }
+      
+      .recover-header h1 {
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .recover-header p {
+        font-size: 0.8rem;
+        margin-bottom: 1.25rem;
+      }
+      
+      .form-group {
+        margin-bottom: 0.875rem;
+      }
+      
+      .form-group label {
+        font-size: 0.85rem;
+        margin-bottom: 0.375rem;
+      }
+      
+      .form-group input {
+        padding: 0.625rem 0.625rem 0.625rem 2rem;
+        font-size: 0.85rem;
+        border-radius: 6px;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.8rem;
+        left: 0.5rem;
+      }
+      
+      .recover-button {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 6px;
+      }
+      
+      .back-to-registration {
+        margin-top: 1.25rem;
+        font-size: 0.85rem;
+      }
+    }
+    
+    /* Extra small devices */
+    @media (max-width: 320px) {
+      .recover-card {
+        padding: 1rem 0.5rem;
+        margin: 0.125rem;
+        border-radius: 8px;
+      }
+      
+      .recover-header h1 {
+        font-size: 1.25rem;
+      }
+      
+      .form-group input {
+        padding: 0.5rem 0.5rem 0.5rem 1.75rem;
+        font-size: 0.8rem;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.75rem;
+        left: 0.375rem;
+      }
+    }
+
+    /* Loading animation for button */
+    .recover-button.loading {
+      pointer-events: none;
+    }
+
+    .recover-button.loading::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      margin-left: -10px;
+      margin-top: -10px;
+      border: 2px solid transparent;
+      border-top: 2px solid var(--primary-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="recover-container">
+    <!-- Recover QR Form Section -->
+    <div class="recover-form-section">
+      <div class="recover-card">
+
+        
+        <div class="recover-header">
+          <div class="qr-icon">
+            <i class="fas fa-qrcode"></i>
+          </div>
+          <h1>Recover <span class="highlight">QR Code</span></h1>
+          <p>Enter your email to receive your QR code</p>
+        </div>
+
+        <form method="post" id="recoverForm">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+            <div class="input-wrapper">
+              <i class="fas fa-envelope"></i>
+              {{ form.email }}
+            </div>
+            {% if form.email.errors %}
+              <ul class="errorlist">
+                {% for error in form.email.errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="errorlist">
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <button type="submit" class="recover-button">
+            <span class="button-text">Send QR Code</span>
+          </button>
+        </form>
+
+        <div class="back-to-registration">
+          <a href="{% url 'register_student' %}">
+            <i class="fas fa-user-plus"></i>
+            Back to Registration
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Form submission with loading state
+    document.getElementById('recoverForm')?.addEventListener('submit', function(e) {
+      const button = document.querySelector('.recover-button');
+      const buttonText = button.querySelector('.button-text');
+      
+      button.classList.add('loading');
+      buttonText.style.opacity = '0';
+      
+      // Re-enable after 3 seconds if form doesn't submit
+      setTimeout(() => {
+        button.classList.remove('loading');
+        buttonText.style.opacity = '1';
+      }, 3000);
+    });
+
+    // Input focus effects
+    document.querySelectorAll('.form-group input').forEach(input => {
+      input.addEventListener('focus', function() {
+        this.parentElement.parentElement.style.transform = 'scale(1.02)';
+      });
+      
+      input.addEventListener('blur', function() {
+        this.parentElement.parentElement.style.transform = 'scale(1)';
+      });
+    });
+  </script>
+</body>
+</html>

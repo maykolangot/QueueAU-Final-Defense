@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Transaction Report</title>
+  <style>
+    body {
+      font-family: Helvetica, sans-serif;
+      font-size: 11px;
+      color: #111;
+      margin: 20px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    h2 {
+      font-size: 14px;
+      margin: 10px 0;
+      color: #4B5563;
+    }
+
+    p, li {
+      font-size: 11px;
+      color: #374151;
+    }
+
+    ul {
+      margin: 10px 0;
+      padding-left: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 10px;
+    }
+
+    th {
+      background-color: #E5E7EB;
+      border: 1px solid #D1D5DB;
+      padding: 6px;
+      text-align: left;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    td {
+      border: 1px solid #E5E7EB;
+      padding: 6px;
+      color: #1F2937;
+      vertical-align: top;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #F9FAFB;
+    }
+
+    tbody tr:nth-child(odd) {
+      background-color: #FFFFFF;
+    }
+
+    .no-transactions {
+      text-align: center;
+      font-style: italic;
+      color: #6B7280;
+      padding: 10px;
+    }
+
+    .header-section {
+      border-bottom: 2px solid #E5E7EB;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-section">
+    <h1>QueueAU</h1>
+    <p>A PHINMA Araullo University Queueing Management System</p>
+  </div>
+
+  <h2>Transaction Report ({{ time_filter }})</h2>
+  <p>Generated at: {{ generated_at|date:"Y-m-d H:i" }}</p>
+
+  <ul>
+    {% if campus %}<li><strong>Campus:</strong> {{ campus }}</li>{% endif %}
+    {% if department %}<li><strong>Department:</strong> {{ department.name }}</li>{% endif %}
+    {% if course %}<li><strong>Course:</strong> {{ course.name }}</li>{% endif %}
+  </ul>
+
+  <table>
+    <thead>
+  <tr>
+    <th>Queue #</th>
+    <th>ID Number</th>
+    <th>Transaction Type</th>
+    <th>Status</th>
+    <th>Priority</th>
+    <th>Campus</th>
+    <th>Cashier</th>
+    <th>Created</th>
+  </tr>
+</thead>
+<tbody>
+  {% for txn in transactions %}
+  <tr>
+    <td>{{ txn.queueNumber }}</td>
+    <td>
+      {% if txn.student %}
+          {{ txn.student.studentId }}
+      {% elif txn.new_enrollee %}
+          {{ txn.new_enrollee.roles }}
+      {% elif txn.guest %}
+          {{ txn.guest.roles }}
+      {% else %}
+          -
+      {% endif %}
+    </td>
+    <td>{{ txn.transactionType }}</td>
+    <td>{{ txn.get_status_display }}</td>
+    <td>{{ txn.priority|yesno:"Yes,No" }}</td>
+    <td>{{ txn.campus }}</td>
+    <td>
+  {% if txn.reservedBy %}
+    {{ txn.reservedBy.name }}
+  {% else %}
+    —
+  {% endif %}
+</td>
+
+    <td>{{ txn.created_at|date:"Y-m-d H:i" }}</td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td class="no-transactions" colspan="8">No transactions found.</td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+  </table>
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+{% extends 'admin/dashboard-admin.html' %}
+
+{% block content %}
+<div class="container my-4">
+
+<form method="get" class="mb-3">
+  <div class="input-group">
+    <input type="text" name="search" value="{{ search }}" placeholder="Search by name or email" class="form-control d-inline w-50" />
+    <button type="submit" class="btn btn-primary">Search</button>
+</div>
+</form>
+
+<h4>Verified Cashiers</h4>
+<table class="table table-bordered table-striped mb-5">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Window</th>
+      <th>Mode</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cashier in verified_cashiers %}
+    <tr>
+      <td><a href="{% url 'cashier_transactions' cashier.id %}">{{ cashier.name }}</a></td>
+      <td>{{ cashier.email }}</td>
+      <td>{{ cashier.windowNum }}</td>
+      <td>{{ cashier.get_process_mode_display }}</td>
+      <td>
+      <a href="{% url 'cashier_update' cashier.id %}" class="btn btn-sm btn-warning" title="Edit">
+          <i class="bi bi-pencil-square"></i>
+      </a>        
+      <form method="post" action="{% url 'cashier_delete' cashier.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this cashier?');">
+          {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+          <i class="bi bi-trash"></i>
+      </button>        
+      </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-center text-muted">No verified cashiers found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h4> Non-Verified Cashiers</h4>
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Window</th>
+      <th>Mode</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cashier in non_verified_cashiers %}
+    <tr>
+      <td><a href="{% url 'cashier_transactions' cashier.id %}">{{ cashier.name }}</a></td>
+      <td>{{ cashier.email }}</td>
+      <td>{{ cashier.windowNum }}</td>
+      <td>{{ cashier.get_process_mode_display }}</td>
+      <td>
+
+        
+        <form method="post" action="{% url 'cashier_verify' cashier.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success">
+              <i class="bi bi-person-check-fill"></i> Verify
+            </button>
+        </form>
+
+      <a href="{% url 'cashier_update' cashier.id %}" class="btn btn-sm btn-warning" title="Edit">
+          <i class="bi bi-pencil-square"></i>
+      </a>
+
+<form method="post" action="{% url 'cashier_reject' cashier.id %}" style="display:inline;" onsubmit="return confirm('Reject this cashier?');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-secondary">
+        <i class="bi bi-x-circle"></i> Reject
+    </button>
+</form>
+
+
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-center text-muted">No non-verified cashiers found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

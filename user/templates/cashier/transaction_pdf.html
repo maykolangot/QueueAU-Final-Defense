@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+            text-align: left;
+        }
+        h2 { text-align: center; }
+    </style>
+</head>
+<body>
+    <h2>{{ user.get_full_name }} – Transactions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Queue</th>
+                <th>Number</th>
+                <th>ID Number</th>
+                <th>Transaction Type</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for txn in transactions %}
+            <tr>
+                <td>{{ txn.queue }}</td>
+                <td>{{ txn.number }}</td>
+                <td>{{ txn.id_number }}</td>
+                <td>{{ txn.transaction_type }}</td>
+                <td>{{ txn.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

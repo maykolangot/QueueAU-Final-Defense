@@ -1,0 +1,242 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Enter OTP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { height: 100%; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: url('{% static "images/bg.png" %}');  /* eto yung background img*/
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, 
+                rgba(0, 33, 71, 0.75) 0%, 
+                rgba(0, 51, 102, 0.7) 25%, 
+                rgba(4, 52, 100, 0.7) 45%, 
+                rgba(247, 183, 49, 0.65) 75%, 
+                rgba(247, 211, 12, 0.7) 100%);
+            pointer-events: none; z-index: 0;
+        }
+        .page-wrap {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem;
+            padding-left: 5rem;
+            position: relative; z-index: 1;
+            max-width: 700px;
+        }
+        @media (max-width: 1200px) {
+            .page-wrap {
+                padding-left: 3rem;
+                max-width: 600px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .page-wrap {
+                padding-left: 2rem;
+                max-width: 500px;
+            }
+            
+            .otp-form {
+                padding: 2.5rem 2rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .page-wrap {
+                max-width: 100%;
+                padding: 1rem;
+                padding-left: 1rem;
+                justify-content: center;
+            }
+            
+            .otp-form {
+                padding: 2rem 1.5rem;
+                max-width: 450px;
+            }
+            
+            .otp-title {
+                font-size: 1.8rem;
+            }
+            
+            .otp-sub {
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .page-wrap { 
+                justify-content: center; 
+                padding: 0.5rem; 
+                padding-left: 0.5rem; 
+            }
+            
+            .otp-form {
+                padding: 1.5rem 1rem;
+                margin: 0.5rem;
+                border-radius: 15px;
+            }
+            
+            .otp-title {
+                font-size: 1.6rem;
+            }
+            
+            .form-control {
+                padding: 0.875rem 0.875rem 0.875rem 2.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .btn-primary {
+                padding: 0.875rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 375px) {
+            .otp-form {
+                padding: 1.25rem 0.75rem;
+                margin: 0.25rem;
+            }
+            
+            .otp-title {
+                font-size: 1.4rem;
+            }
+            
+            .form-control {
+                padding: 0.75rem 0.75rem 0.75rem 2.25rem;
+                font-size: 0.85rem;
+            }
+        }
+        .otp-form {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            padding: 3rem 3.5rem;
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .otp-form::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #ffc107;
+        }
+        .otp-title { 
+            font-weight: 800; 
+            color: #002147; 
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .otp-sub { 
+            color: #718096; 
+            font-size: 0.95rem; 
+            font-weight: 400;
+        }
+        .form-label { 
+            display: block;
+            font-weight: 600; 
+            color: #002147; 
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem 1rem 1rem 3rem;
+            background: rgba(255,255,255,0.8);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .form-control:focus {
+            outline: none; 
+            border-color: #ffc107;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
+            background: rgba(255, 255, 255, 1);
+        }
+        .btn-primary {
+            background: #002147; 
+            border-color: #002147; 
+            border-radius: 12px;
+            font-weight: 700; 
+            padding: 1rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary:hover { 
+            background: #003366; 
+            border-color: #003366; 
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .help-text { 
+            font-size: 0.9rem; 
+            color: #6b7280; 
+            background: linear-gradient(135deg, #fef5e7, #fbd38d);
+            border: 1px solid #f6ad55;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrap">
+        <div class="otp-form">
+            <div class="text-center mb-3">
+            </div>
+            <h2 class="text-center mb-2 otp-title">Enter OTP</h2>
+            <p class="text-center mb-4 otp-sub">Please enter the one-time code sent to your email.</p>
+            <form method="post">
+                {% csrf_token %}
+                <label for="otp" class="form-label">One-Time Password</label>
+                <input id="otp" type="text" name="otp" placeholder="e.g. 123456" class="form-control mb-3" required>
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check2-circle me-1"></i>Confirm Password Change</button>
+            </form>
+            <div class="mt-3 text-center help-text">
+                Didn’t receive the code? Check your spam folder or request a new one from the previous page.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

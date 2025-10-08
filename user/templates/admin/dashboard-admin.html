@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}QueueAU Admin Dashboard{% endblock %}</title>
+
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Select2 & ChartJS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.2.0/dist/chartjs-chart-matrix.min.js"></script>
+
+  <!-- Custom Page CSS -->
+  {% block css %}{% endblock %}
+  
+  <style>
+    :root {
+      --primary-color: #023178;
+      --secondary-color: #0d6efd;
+      --success-color: #198754;
+      --warning-color: #ffc107;
+      --danger-color: #dc3545;
+      --info-color: #0dcaf0;
+      --light-color: #f8f9fa;
+      --dark-color: #212529;
+      --border-radius: 12px;
+      --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+      --shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar Styles */
+    #sidebar {
+      width: 280px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-x: hidden;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      z-index: 1030;
+      background: linear-gradient(180deg, var(--primary-color) 0%, #1a4a8a 100%);
+      box-shadow: var(--shadow-lg);
+    }
+
+    #sidebar.collapsed {
+      width: 80px;
+    }
+
+    #sidebar .link-text {
+      transition: all 0.3s ease;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #sidebar.collapsed .link-text {
+      opacity: 0;
+      visibility: hidden;
+      width: 0;
+      overflow: hidden;
+    }
+
+    #sidebar img.logo-img {
+      width: 45px;
+      height: 45px;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #sidebar.collapsed img.logo-img {
+      margin: 0 auto;
+    }
+
+    .sidebar {
+      height: 100vh;
+      color: white;
+      transition: all 0.3s ease;
+      overflow-x: hidden;
+    }
+
+    .sidebar .nav-link {
+      color: rgba(255, 255, 255, 0.9);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      border-radius: var(--border-radius);
+      margin: 4px 12px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .sidebar .nav-link:hover::before {
+      left: 100%;
+    }
+
+    .sidebar .nav-link:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar .nav-link.active {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar .nav-link i {
+      font-size: 1.3rem;
+      margin-right: 16px;
+      min-width: 24px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar .nav-link:hover i {
+      transform: scale(1.1);
+    }
+
+    .sidebar .nav-link .badge {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background: var(--danger-color);
+      color: white;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+      margin-left: 280px;
+      transition: margin-left 0.3s ease;
+      min-height: 100vh;
+      background: white;
+      padding: 20px;
+    }
+
+    .main-content.expanded {
+      margin-left: 80px;
+    }
+
+    /* Header Styles */
+    .top-header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 20px 30px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1020;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .sidebar-toggle {
+      background: var(--primary-color);
+      border: none;
+      color: white;
+      width: 45px;
+      height: 45px;
+      border-radius: var(--border-radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar-toggle:hover {
+      background: #1a4a8a;
+      transform: scale(1.05);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .welcome-section h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--dark-color);
+      margin: 0;
+    }
+
+    .welcome-section p {
+      color: #6c757d;
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .notification-btn {
+      position: relative;
+      background: white;
+      border: 1px solid #dee2e6;
+      color: #6c757d;
+      width: 45px;
+      height: 45px;
+      border-radius: var(--border-radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+    }
+
+    .notification-btn:hover {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+      transform: scale(1.05);
+    }
+
+    
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: white;
+      border-radius: var(--border-radius);
+      border: 1px solid #dee2e6;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .user-profile:hover {
+      border-color: var(--primary-color);
+      box-shadow: var(--shadow);
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .user-info h6 {
+      margin: 0;
+      font-weight: 600;
+      color: var(--dark-color);
+      font-size: 0.95rem;
+    }
+
+    .user-info small {
+      color: #6c757d;
+      font-size: 0.8rem;
+    }
+
+    /* Content Area Styles */
+    .content-wrapper {
+      padding: 30px;
+      min-height: calc(100vh - 100px);
+    }
+
+    .page-header {
+      margin-bottom: 30px;
+    }
+
+    .page-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--dark-color);
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      color: #6c757d;
+      font-size: 1.1rem;
+      margin-bottom: 0;
+    }
+
+    /* Card Styles */
+    .stat-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 25px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      border: none;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Cashier cards specific styling - more compact */
+    .cashier-stat-card {
+      padding: 20px;
+      min-height: auto;
+    }
+
+    .cashier-stat-card .stat-icon {
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+
+    .cashier-stat-card .stat-number {
+      font-size: 2rem;
+      margin-bottom: 6px;
+    }
+
+    .cashier-stat-card .stat-label {
+      font-size: 0.9rem;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .stat-card.success::before {
+      background: linear-gradient(90deg, var(--success-color), #20c997);
+    }
+
+    .stat-card.warning::before {
+      background: linear-gradient(90deg, var(--warning-color), #fd7e14);
+    }
+
+    .stat-card.info::before {
+      background: linear-gradient(90deg, var(--info-color), #6f42c1);
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, rgba(2, 49, 120, 0.1), rgba(13, 110, 253, 0.1));
+      color: var(--primary-color);
+    }
+
+    .stat-card.success .stat-icon {
+      background: linear-gradient(135deg, rgba(25, 135, 84, 0.1), rgba(32, 201, 151, 0.1));
+      color: var(--success-color);
+    }
+
+    .stat-card.warning .stat-icon {
+      background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(253, 126, 20, 0.1));
+      color: var(--warning-color);
+    }
+
+    .stat-card.info .stat-icon {
+      background: linear-gradient(135deg, rgba(13, 202, 240, 0.1), rgba(111, 66, 193, 0.1));
+      color: var(--info-color);
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--dark-color);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      color: #6c757d;
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 0;
+    }
+
+    
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      #sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+      }
+
+      #sidebar.show {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .content-wrapper {
+        padding: 20px 15px;
+      }
+
+      .page-title {
+        font-size: 1.8rem;
+      }
+
+      .header-content {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+      }
+
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
+    /* Animation Classes */
+    .fade-in {
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    .slide-up {
+      animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { 
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-color);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #1a4a8a;
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex">
+    <!-- Enhanced Sidebar -->
+    <nav id="sidebar" class="sidebar">
+      <div class="d-flex flex-column h-100">
+        <!-- Logo Section -->
+        <div class="d-flex align-items-center p-4">
+          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-rx538nxpk82_YYm0teKDIQz4GYw5WYnBtg&s" 
+               class="logo-img" alt="PHINMA AU Logo">
+          <div class="ms-3 link-text">
+            <h4 class="fw-bold mb-0 text-white">QueueAU</h4>
+            <small class="text-white-50">Admin Portal</small>
+          </div>
+        </div>
+
+        <hr class="border-light opacity-25 mx-3">
+
+        <!-- Navigation Menu -->
+        <ul class="nav flex-column flex-grow-1">
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{% url 'admin_dashboard_summary' %}">
+              <i class="bi bi-speedometer2"></i>
+              <span class="link-text ms-3">Dashboard</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{% url 'admin_statistics' %}">
+              <i class="bi bi-bar-chart-line"></i>
+              <span class="link-text ms-3">Statistics</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{% url 'cashier_list' %}">
+              <i class="bi bi-person-badge"></i>
+              <span class="link-text ms-3">Cashiers</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{% url 'student_list' %}">
+              <i class="bi bi-people"></i>
+              <span class="link-text ms-3">Students</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{% url 'admin_queue_settings' %}">
+              <i class="bi bi-gear"></i>
+              <span class="link-text ms-3">Settings</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{% url 'log_viewer' %}">
+              <i class="bi bi-journal-text"></i>
+              <span class="link-text ms-3">System Logs</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Bottom Section -->
+        <div class="mt-auto p-3">
+          <hr class="border-light opacity-25 mx-3 mb-3">
+          
+          <!-- User Profile -->
+          <div class="d-flex align-items-center p-3 rounded" style="background: rgba(255, 255, 255, 0.1);">
+            <div class="user-avatar me-3">
+              {{ user.name|first|upper }}
+            </div>
+            <div class="link-text">
+              <h6 class="text-white mb-0">{{ user.name }}</h6>
+              <small class="text-white-50">Administrator</small>
+            </div>
+          </div>
+
+          <!-- Logout Button -->
+          <div class="mt-3">
+            <a class="nav-link d-flex align-items-center text-danger" 
+               href="#" id="logoutBtn">
+              <i class="bi bi-box-arrow-right"></i>
+              <span class="link-text ms-3">Logout</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-content flex-grow-1" id="mainContent">
+      <!-- Enhanced Header -->
+      <header class="top-header">
+        <div class="header-content">
+          <div class="header-left">
+            <button id="sidebarToggle" class="sidebar-toggle">
+              <i class="bi bi-list"></i>
+            </button>
+            
+            <div class="welcome-section">
+              <h1>Welcome back, {{ user.name }}! 👋</h1>
+              <p>Here's what's happening with your QueueAU system today</p>
+            </div>
+          </div>
+
+          <div class="header-right">
+            
+            
+            <div class="user-profile" id="userProfile">
+              <div class="user-avatar">
+                {{ user.name|first|upper }}
+              </div>
+              <div class="user-info">
+                <h6>{{ user.name }}</h6>
+                <small>Administrator</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Wrapper -->
+      <div class="content-wrapper">
+        {% block content %}
+        <!-- Default Dashboard Content -->
+        <div class="page-header fade-in">
+          <h1 class="page-title">Dashboard Overview</h1>
+          <p class="page-subtitle">Monitor your QueueAU system performance and key metrics</p>
+        </div>
+        
+         <!-- Queue Metrics FIRST (Most Important) -->
+         <div class="row g-4 mb-5 slide-up">
+           <div class="col-xl-4 col-md-6">
+             <div class="stat-card success">
+               <div class="stat-icon">
+                 <i class="bi bi-people"></i>
+               </div>
+               <div class="stat-number" id="studentCount">0</div>
+               <div class="stat-label">Students in Queue</div>
+             </div>
+           </div>
+   
+           <div class="col-xl-4 col-md-6">
+             <div class="stat-card warning">
+               <div class="stat-icon">
+                 <i class="bi bi-person-plus"></i>
+               </div>
+               <div class="stat-number" id="newEnrolleeCount">0</div>
+               <div class="stat-label">New Enrollees</div>
+             </div>
+           </div>
+   
+           <div class="col-xl-4 col-md-6">
+             <div class="stat-card">
+               <div class="stat-icon">
+                 <i class="bi bi-clock-history"></i>
+               </div>
+               <div class="stat-number" id="onQueueToday">0</div>
+               <div class="stat-label">On Queue Today</div>
+             </div>
+           </div>
+         </div>
+ 
+                              <!-- Cashier Statistics SECOND -->
+           <div class="row g-4 mb-5 slide-up">
+             <div class="col-xl-4 col-md-6">
+               <div class="stat-card cashier-stat-card">
+                 <div class="stat-icon">
+                   <i class="bi bi-person-check-fill"></i>
+                 </div>
+                 <div class="stat-number">{{ verified_count }}</div>
+                 <div class="stat-label">Verified Cashiers</div>
+               </div>
+             </div>
+   
+             <div class="col-xl-4 col-md-6">
+               <div class="stat-card success cashier-stat-card">
+                 <div class="stat-icon">
+                   <i class="bi bi-wifi"></i>
+                 </div>
+                 <div class="stat-number">{{ online_count }}</div>
+                 <div class="stat-label">Online Cashiers</div>
+               </div>
+             </div>
+   
+             <div class="col-xl-4 col-md-6">
+               <div class="stat-card warning cashier-stat-card">
+                 <div class="stat-icon">
+                   <i class="bi bi-person-dash-fill"></i>
+                 </div>
+                 <div class="stat-number">{{ non_verified }}</div>
+                 <div class="stat-label">Pending Verification</div>
+               </div>
+             </div>
+           </div>
+
+        
+
+                 <!-- Charts Row -->
+         <div class="row g-4 mb-5 slide-up">
+           <div class="col-12 col-lg-6">
+             <div class="card border-0 shadow-sm h-100">
+               <div class="card-header bg-transparent border-0 py-4">
+                 <h5 class="mb-0 fw-bold">
+                   <i class="bi bi-pie-chart text-primary me-2"></i>
+                   Status Breakdown
+                 </h5>
+               </div>
+               <div class="card-body">
+                 <canvas id="statusChart" class="w-100" style="height:200px;"></canvas>
+               </div>
+             </div>
+           </div>
+           <div class="col-12 col-lg-6">
+             <div class="card border-0 shadow-sm h-100">
+               <div class="card-header bg-transparent border-0 py-4">
+                 <h5 class="mb-0 fw-bold">
+                   <i class="bi bi-graph-up text-success me-2"></i>
+                   Transaction Trend
+                 </h5>
+               </div>
+               <div class="card-body">
+                 <canvas id="transactionTrendChart" class="w-100" style="height:200px;"></canvas>
+               </div>
+             </div>
+           </div>
+         </div>
+
+
+        {% endblock %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Logout Form -->
+  <form id="logout-form" method="post" action="{% url 'logout' %}" style="display: none;">
+    {% csrf_token %}
+  </form>
+
+  <!-- Enhanced JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    // Simple, CSP-compliant JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('QueueAU Admin Dashboard loaded successfully!');
+      
+      // Initialize sidebar functionality
+      initializeSidebar();
+      
+      // Set active navigation
+      setActiveNavItem();
+      
+             // Add event listeners
+       addEventListeners();
+       
+               
+      });
+
+    // Initialize sidebar
+    function initializeSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.getElementById('mainContent');
+      
+      if (sidebar && mainContent) {
+        // Check localStorage for collapsed state
+        try {
+          const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+          if (sidebarCollapsed) {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('expanded');
+          }
+        } catch (e) {
+          console.log('LocalStorage not available');
+        }
+      }
+    }
+
+    // Sidebar toggle function
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.getElementById('mainContent');
+      
+      if (sidebar && mainContent) {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('expanded');
+        
+        // Save state to localStorage
+        try {
+          localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        } catch (e) {
+          console.log('LocalStorage not available');
+        }
+      }
+    }
+
+    // Set active navigation item
+    function setActiveNavItem() {
+      const currentPath = window.location.pathname;
+      const navLinks = document.querySelectorAll('.nav-link');
+      
+      navLinks.forEach(function(link) {
+        const href = link.getAttribute('href');
+        if (href && href === currentPath) {
+          link.classList.add('active');
+        }
+      });
+    }
+
+    // User menu toggle
+    function toggleUserMenu() {
+      console.log('User menu clicked');
+      // Add your user menu logic here
+    }
+
+    // Mobile sidebar toggle
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar) {
+        sidebar.classList.toggle('show');
+      }
+    }
+
+    // Simple toast notification (CSP-compliant)
+    function showToast(message, type) {
+      const toastContainer = document.createElement('div');
+      toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+      toastContainer.style.zIndex = '9999';
+      
+      const toast = document.createElement('div');
+      toast.className = 'alert alert-' + (type || 'info') + ' alert-dismissible fade show';
+      toast.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+      
+      toastContainer.appendChild(toast);
+      document.body.appendChild(toastContainer);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(function() {
+        if (toastContainer.parentNode) {
+          toastContainer.parentNode.removeChild(toastContainer);
+        }
+      }, 5000);
+    }
+
+         // Loading state function
+     function showLoading(element) {
+       if (element) {
+         element.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+       }
+     }
+
+           
+    
+    // Add all event listeners
+    function addEventListeners() {
+      // Sidebar toggle button
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+      }
+      
+      // User profile click
+      const userProfile = document.getElementById('userProfile');
+      if (userProfile) {
+        userProfile.addEventListener('click', toggleUserMenu);
+      }
+      
+      // Logout button
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          document.getElementById('logout-form').submit();
+        });
+      }
+      
+             // Notification button
+       const notificationBtn = document.querySelector('.notification-btn');
+       if (notificationBtn) {
+         notificationBtn.addEventListener('click', function() {
+           toggleNotificationPanel();
+         });
+       }
+      
+      console.log('Event listeners added successfully');
+    }
+  </script>
+
+     <!-- Custom Page Scripts -->
+   {% block scripts %}{% endblock %}
+   
+        <!-- Chart Initialization Script - Using Original Functions -->
+     <script>
+       let statusChart = null;
+       let trendChart = null;
+     
+       async function loadKPI() {
+         const res = await fetch("kpi-data/");
+         const data = await res.json();
+     
+                   document.getElementById('onQueueToday').textContent = data.on_queue_today;
+          document.getElementById('studentCount').textContent = data.queue_breakdown.students;
+          document.getElementById('newEnrolleeCount').textContent = data.queue_breakdown.new_enrollees;
+     
+         const ctx = document.getElementById('statusChart').getContext('2d');
+     
+         const backgroundColors = data.status_counts.map((_, index) => {
+           const hue = (index * 45) % 360;
+           return `hsl(${hue}, 70%, 60%)`;
+         });
+     
+         if (statusChart) statusChart.destroy();
+     
+         statusChart = new Chart(ctx, {
+           type: 'bar',
+           data: {
+             labels: data.status_counts.map(x => x.status),
+             datasets: [{
+               label: 'Status Counts',
+               data: data.status_counts.map(x => x.count),
+               backgroundColor: backgroundColors,
+               borderWidth: 1
+             }]
+           },
+           options: {
+             responsive: true,
+             scales: {
+               y: { beginAtZero: true }
+             }
+           }
+         });
+     
+         // Line chart for 3 status trends
+         const trendCtx = document.getElementById('transactionTrendChart').getContext('2d');
+         if (trendChart) trendChart.destroy();
+     
+         const statuses = {
+           on_hold: 'On Hold',
+           completed: 'Completed',
+           cut_off: 'Cut Off'
+         };
+     
+         const labels = data.transaction_trends.on_hold.map(p => p.date);
+         labels.push("Tomorrow");
+     
+         const trendDatasets = Object.keys(statuses).map(key => {
+           const points = data.transaction_trends[key].map(p => p.count);
+           points.push(data.forecast[key]);
+     
+           return {
+             label: statuses[key],
+             data: points,
+             fill: false,
+             tension: 0.2,
+             borderWidth: 2
+           };
+         });
+     
+         trendChart = new Chart(trendCtx, {
+           type: 'line',
+           data: {
+             labels: labels,
+             datasets: trendDatasets
+           },
+           options: {
+             responsive: true,
+             plugins: {
+               title: {
+                 display: true,
+                 text: 'Transactions Trend (On Hold, Completed, Cut Off)'
+               }
+             },
+             scales: {
+               y: { beginAtZero: true }
+             }
+           }
+         });
+       }
+     
+       loadKPI();
+       setInterval(loadKPI, 15000);
+     </script>
+ </body>
+ </html>

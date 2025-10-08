@@ -1,0 +1,528 @@
+{% extends 'base-user.html' %}
+
+
+{% block content %}
+
+
+
+<div>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</div>
+
+<div class="wrapper">
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Section: Window Number and Current Queue -->
+        <div class="d-flex flex-wrap gap-4 mb-4">
+            <!-- Window Number Box -->
+            <div class="flex-fill p-4 shadow-sm bg-light border rounded" style="min-width: 250px; background-color: #f0f4f8;">
+                <h5 class="text-muted">Window Number</h5>
+                <h1 class="display-4 text-primary fw-bold" id="window">{{ user.windowNum }}</h1>
+                <p class="mt-3"><strong>Processing Mode:</strong> <span id="mode">{{ user.get_process_mode_display }}</span></p>
+            </div>
+
+            <!-- Current Queue Box -->
+            <div class="flex-fill p-4 shadow-sm bg-light border rounded" style="min-width: 250px; background-color: #e1f5fe;">
+                <h5 class="text-muted">Current Queue</h5>
+                <div id="queue-info">
+                    <p>No queue currently in process.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons Section -->
+        <div class="d-flex gap-3 mb-4">
+            <button type="button" class="btn btn-primary btn-lg flex-fill d-flex flex-column align-items-center justify-content-center" style="min-width: 150px;" onclick="processNextQueue()">
+                <i class="bi bi-arrow-right-circle-fill" style="font-size: 2rem;"></i>
+                <span class="mt-2">Next Queue</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg flex-fill d-flex flex-column align-items-center justify-content-center" style="min-width: 150px;" onclick="holdCurrentQueue()">
+                <i class="bi bi-pause-circle-fill" style="font-size: 2rem;"></i>
+                <span class="mt-2">Hold</span>
+            </button>
+            <button type="button" class="btn btn-danger btn-lg flex-fill d-flex flex-column align-items-center justify-content-center" style="min-width: 150px;" onclick="skipCurrentQueue()">
+                <i class="bi bi-x-circle-fill" style="font-size: 2rem;"></i>
+                <span class="mt-2">Cancel</span>
+            </button>
+        </div>
+
+        <hr>
+
+        <!-- Bottom Section: Upcoming and On-Hold -->
+        <div class="d-flex flex-wrap gap-4 mt-4">
+            <!-- Upcoming Queues -->
+            <div class="flex-fill">
+                <h4>Next 10 in Queue</h4>
+                <div class="queue-container" style="background-color: #fff3e0;" id="updateUpcomingQueues">
+                    <ul id="queue-list" class="list-group">
+                        <li class="list-group-item text-muted">Loading...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- On-Hold Transactions -->
+            <div class="flex-fill">
+                <div class="d-flex align-items-center mb-3">
+                    <h4 class="mb-0">On-Hold Transactions</h4>
+                    <input type="text" id="holdSearch" class="form-control ms-3" placeholder="Search by queue number or name">
+                </div>
+                <div class="hold-container" style="background-color: #f1f8e9;">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Queue</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdListBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Forecast Summary</h5>
+        <p>Today: <span id="forecastTodayValue">--</span> vs Yesterday: <span id="actualTodayValue">--</span> <span id="forecastTrendIcon"></span></p>
+        <div id="forecastChart"></div>
+    </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    fetchForecastData();
+});
+
+function fetchForecastData() {
+    fetch("/cashier/forecast-chart-data/")
+        .then(response => response.json())
+        .then(data => {
+            renderForecastChart(data);
+        })
+        .catch(error => {
+            console.error("Failed to fetch forecast chart data:", error);
+        });
+}
+
+</script>
+        </div>
+    </div>
+</div>
+
+
+        
+
+    </div>
+
+     
+        
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.querySelector('.toggle-btn');
+        sidebar.classList.toggle('collapsed');
+        toggleBtn.classList.toggle('collapsed');
+    }
+
+    function loadContent(event, link) {
+    event.preventDefault();
+    const url = link.getAttribute("href");
+
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            const main = document.querySelector(".main-content");
+            main.innerHTML = html;
+
+            // Reinitialize dynamic parts
+            if (typeof updateQueueDisplay === "function") {
+                updateQueueDisplay();
+            }
+            if (typeof fetchDashboardData === "function") {
+                fetchDashboardData();
+            }
+        })
+        .catch(error => {
+            console.error("Failed to load content:", error);
+        });
+    }
+
+
+    function fetchDashboardData() {
+        fetch("{% url 'cashier_dashboard_data' %}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) return;
+
+                document.getElementById("mode").textContent = data.processing_mode;
+                document.getElementById("email").textContent = data.email;
+                document.getElementById("window").textContent = data.window_number;
+            });
+    }
+
+    setInterval(fetchDashboardData, 1000); // every 1 second
+
+
+    function updateQueueDisplay() {
+    fetch("{% url 'get_current_queue' %}")
+        .then(response => response.json())
+        .then(data => {
+            const display = document.getElementById("queue-info");
+            if (data.queue_number) {
+                let studentIdLine = "";
+                if (data.student_id) {
+                    studentIdLine = `<p><strong>Student ID:</strong> ${data.student_id}</p>`;
+                }
+
+                display.innerHTML = `
+                    <div class="d-flex flex-column align-items-center">
+                        <p class="display-4 text-primary" style="font-weight: 800;"">${data.queue_number}</p>
+                        <div class="d-flex justify-content-center">
+                            <p class="fs-5"><strong>Student Name:</strong> ${data.requester}</p>
+                            <p class="fs-5 ms-3"><strong>Type:</strong> ${data.role}</p>
+
+                            
+                        </div>
+                        ${studentIdLine}
+                    </div>
+                `;
+            } else {
+                display.innerHTML = `<p>No queue in process.</p>`;
+            }
+        });
+}
+
+
+    function processNextQueue() {
+    fetch("{% url 'next_queue' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken(),
+            "Content-Type": "application/json"
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Next queue response:", data);
+        updateQueueDisplay();
+    })
+    .catch(error => console.error("POST failed:", error));
+}
+
+    function skipCurrentQueue() {
+        fetch("{% url 'skip_queue' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+                "Content-Type": "application/json"
+            }
+        }).then(updateQueueDisplay);
+    }
+
+    // Initial load + polling every 1 seconds
+    updateQueueDisplay();
+    setInterval(updateQueueDisplay, 1000);
+
+
+
+    const csrftoken = "{{ csrf_token }}";
+
+    function getCSRFToken() {
+        const name = 'csrftoken';
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const c = cookies[i].trim();
+            if (c.startsWith(name + '=')) {
+                return decodeURIComponent(c.substring(name.length + 1));
+            }
+        }
+        return null;
+    }
+
+function updateUpcomingQueues() {
+    fetch("{% url 'next_queues_list' %}", {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to fetch queue data.');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const queueList = document.getElementById('queue-list');
+        if (!queueList) {
+            console.warn('Element #queue-list not found in the DOM.');
+            return;
+        }
+
+        queueList.innerHTML = ''; // Clear existing list
+
+        if (!data.queues || data.queues.length === 0) {
+            const emptyMsg = document.createElement('li');
+            emptyMsg.className = 'list-group-item text-muted';
+            emptyMsg.textContent = 'No queues currently.';
+            queueList.appendChild(emptyMsg);
+            return;
+        }
+
+        data.queues.forEach(item => {
+            const entry = document.createElement('li');
+            entry.className = 'list-group-item';
+            entry.innerHTML = `<strong>#${item.queue_number}</strong> - ${item.priority ? '<span class="text-danger">Priority</span>' : 'Standard'} <span class="float-end">${item.created_at}</span>`;
+            queueList.appendChild(entry);
+        });
+    })
+    .catch(error => {
+        console.error('Error during fetch:', error);
+        const queueList = document.getElementById('queue-list');
+        if (queueList) {
+            queueList.innerHTML = '<li class="list-group-item text-danger">Failed to load queue.</li>';
+        }
+    });
+}
+
+setInterval(updateUpcomingQueues, 1000); // every 10 seconds
+
+    // Hold current Queue
+    function updateHoldList() {
+        fetch("{% url 'list_on_hold_transactions' %}")
+            .then(res => res.json())
+            .then(data => {
+                const body = document.getElementById("holdListBody");
+                const search = document.getElementById("holdSearch").value.toLowerCase();
+                body.innerHTML = "";
+
+                data.holds.forEach(txn => {
+                    if (
+                        txn.queue_number.toLowerCase().includes(search) ||
+                        txn.name.toLowerCase().includes(search)
+                    ) {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${txn.queue_number}</td>
+                            <td>${txn.name}</td>
+                            <td>${txn.type}</td>
+                            <td>
+                                <button class="btn btn-sm btn-success me-1" onclick="updateHoldStatus(${txn.id}, 'completed')">Complete</button>
+                                <button class="btn btn-sm btn-danger" onclick="updateHoldStatus(${txn.id}, 'cancelled')">Cancel</button>
+                            </td>
+                        `;
+                        body.appendChild(row);
+                    }
+                });
+            });
+    }
+
+    // Call at least once!
+    updateHoldList();
+
+
+    function holdCurrentQueue() {
+        fetch("{% url 'hold_queue' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+                "Content-Type": "application/json"
+            }
+        })
+        .then(() => {
+            updateQueueDisplay();
+            updateHoldList();
+        });
+    }
+
+    function updateHoldStatus(id, status) {
+        fetch("{% url 'update_hold_status' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ id, status })
+        }).then(() => updateHoldList());
+    }
+
+    document.getElementById("holdSearch").addEventListener("input", updateHoldList);
+    setInterval(updateHoldList, 10000); // refresh every 10 sec
+    updateHoldList();
+</script>
+
+
+
+<script>
+function loadNextQueues() {
+        fetch("{% url 'next_queues_list' %}")
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('queue-list');
+                list.innerHTML = ""; // Clear current list
+                if (data.queues && data.queues.length) {
+                    data.queues.forEach(txn => {
+                        const item = document.createElement('li');
+                        item.innerHTML = `#${txn.queue_number} - ${txn.priority ? "Priority" : "Standard"} - ${txn.created_at}`;
+                        list.appendChild(item);
+                    });
+                } else {
+                    list.innerHTML = "<li>No queues available</li>";
+                }
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", loadNextQueues);
+
+
+</script>
+<style>
+    .wrapper {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        transition: margin-right 0.3s;
+        background-color: #f9fafb; /* Light grayish background for the main content */
+
+    }
+
+        /* Make both Next 10 in Queue and On-Hold Transactions sections scrollable separately */
+    .queue-container, .hold-container {
+        max-height: 300px; /* Adjust the height based on your needs */
+        overflow-y: auto;  /* Enable vertical scroll */
+        border: 1px solid #ddd; /* Add a border for clarity */
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f9f9f9; /* Optional: Add a background color */
+    }
+
+    /* Optional: Add a shadow for visual appeal */
+    .queue-container, .hold-container {
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+        /* Align On-Hold Transactions title and search bar */
+    .d-flex.align-items-center {
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* Space between the title and search bar */
+    }
+
+    /* Style for the search bar */
+    #holdSearch {
+        max-width: 250px; /* Optional: Control the width of the search bar */
+    }
+
+
+    .sidebar {
+        width: 300px;
+        background: #ffffff;
+        border-left: 1px solid #e5e7eb;
+        height: 100vh;
+        position: fixed;
+        right: 0;
+        top: 0;
+        transition: transform 0.3s;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05);
+        overflow-y: auto;
+    }
+
+    .sidebar.collapsed {
+        transform: translateX(100%);
+    }
+
+    .toggle-btn {
+        position: fixed;
+        right: 310px;
+        top: 20px;
+        z-index: 1000;
+        transition: right 0.3s;
+    }
+
+    .toggle-btn.collapsed {
+        right: 20px;
+    }
+
+    .nav-link {
+        color: #4b5563;
+        padding: 0.75rem 1.25rem;
+        transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+        background: #f3f4f6;
+        color: #1f2937;
+    }
+
+    .nav-link.active {
+        background: #e5e7eb;
+        color: #1f2937;
+        font-weight: 500;
+    }
+
+    .sidebar-header {
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .notification-badge {
+        background: #ef4444;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+    }
+
+    .user-status {
+        width: 10px;
+        height: 10px;
+        background: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 100%;
+        }
+        .toggle-btn {
+            right: 20px;
+        }
+    }
+
+    /* Fix alignment for username and status */
+    .d-flex.align-items-center {
+        align-items: center; /* Keep image and text aligned horizontally */
+    }
+
+    .user-status {
+        width: 10px;
+        height: 10px;
+        background: #10b981; /* Green color */
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    /* Ensure status text is aligned vertically with the name */
+    .text-muted {
+        display: block; /* Ensure the status text appears below the name */
+        margin-top: 5px; /* Optional: space between name and status */
+    }
+</style>
+
+{% endblock %}
+

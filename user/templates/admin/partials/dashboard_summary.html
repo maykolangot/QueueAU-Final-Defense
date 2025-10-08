@@ -1,0 +1,318 @@
+{% extends 'admin/dashboard-admin.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    
+    <div class="row g-4">
+        <!-- Total Cashiers Card -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow rounded-4 bg-light h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="text-muted">Total Cashiers (verified )</h5>
+                            <h3 class="fw-bold text-primary mb-0">{{ verified_count }}</h3>
+                        </div>
+                        <i class="bi bi-person-check-fill fs-1 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Online Cashiers Card -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow rounded-4 bg-light h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="text-muted">Online Cashiers</h5>
+                            <h3 class="fw-bold text-success mb-0">{{ online_count }}</h3>
+                        </div>
+                        <i class="bi bi-wifi fs-1 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow rounded-4 bg-light h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="text-muted">Cashier Request for Verification</h5>
+                            <h3 class="fw-bold text-primary mb-0">{{ non_verified }}</h3>
+                        </div>
+                        <i class="bi-person-dash-fill fs-1 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div>
+
+
+<div class="container my-5" id="kpi-container">
+
+  <!-- 🔹 Metrics Breaker -->
+  <div class="mb-3">
+    <h5 class="border-bottom pb-2 text-uppercase text-muted">Metrics Overview</h5>
+  </div>
+
+  <!-- High-Level Metrics -->
+  <div class="row g-4 text-center mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm border-0 bg-light h-100">
+        <div class="card-body">
+          <h6 class="text-muted mb-2 text-uppercase">On Queue Today</h6>
+          <p class="display-6 fw-semibold text-dark mb-0" id="onQueueToday">Loading...</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm border-0 bg-light h-100">
+        <div class="card-body">
+          <h6 class="text-muted mb-2 text-uppercase">Students in Queue</h6>
+          <p class="display-6 fw-semibold text-dark mb-0" id="studentCount">0</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm border-0 bg-light h-100">
+        <div class="card-body">
+          <h6 class="text-muted mb-2 text-uppercase">New Enrollees</h6>
+          <p class="display-6 fw-semibold text-dark mb-0" id="newEnrolleeCount">0</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm border-0 bg-light h-100">
+        <div class="card-body">
+          <h6 class="text-muted mb-2 text-uppercase">Guests in Queue</h6>
+          <p class="display-6 fw-semibold text-dark mb-0" id="guestCount">0</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Cashier KPI Breaker -->
+  <div class="mt-5 mb-3">
+    <h5 class="border-bottom pb-2 text-uppercase text-muted">Cashier Completed Transactions</h5>
+  </div>
+
+  <!-- Cashier Comparison Cards -->
+  <div class="row g-4" id="cashier-kpi-container"></div>
+
+  <!-- 🔹 Charts Breaker -->
+  <div class="mt-5 mb-3">
+    <h5 class="border-bottom pb-2 text-uppercase text-muted">Visual Insighs</h5>
+  </div>
+
+  <!-- Chart Section -->
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h6 class="card-subtitle text-muted text-uppercase mb-3">Status Breakdown for today</h6>
+          <canvas id="statusChart" class="w-100" style="height:220px;"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h6 class="card-subtitle text-muted text-uppercase mb-3">Transaction Trend for this Week</h6>
+          <canvas id="transactionTrendChart" class="w-100" style="height:220px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            let statusChart = null;
+            let trendChart = null;
+        
+            async function loadKPI() {
+                const res = await fetch("kpi-data/");
+                const data = await res.json();
+        
+                document.getElementById('onQueueToday').textContent = data.on_queue_today;
+                document.getElementById('studentCount').textContent = data.queue_breakdown.students;
+                document.getElementById('newEnrolleeCount').textContent = data.queue_breakdown.new_enrollees;
+                document.getElementById('guestCount').textContent = data.queue_breakdown.guests;
+
+        
+                const ctx = document.getElementById('statusChart').getContext('2d');
+        
+                const backgroundColors = data.status_counts.map((_, index) => {
+                    const hue = (index * 45) % 360;
+                    return `hsl(${hue}, 70%, 60%)`;
+                });
+        
+                if (statusChart) statusChart.destroy();
+        
+                statusChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.status_counts.map(x => x.status),
+                        datasets: [{
+                            label: 'Status Counts',
+                            data: data.status_counts.map(x => x.count),
+                            backgroundColor: backgroundColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+        
+                // Line chart for 3 status trends
+                const trendCtx = document.getElementById('transactionTrendChart').getContext('2d');
+                if (trendChart) trendChart.destroy();
+        
+                const statuses = {
+                    on_hold: 'On Hold',
+                    completed: 'Completed',
+                    cut_off: 'Cut Off'
+                };
+        
+                const labels = data.transaction_trends.on_hold.map(p => p.date);
+                labels.push("Tomorrow");
+        
+                const trendDatasets = Object.keys(statuses).map(key => {
+                    const points = data.transaction_trends[key].map(p => p.count);
+                    points.push(data.forecast[key]);
+        
+                    return {
+                        label: statuses[key],
+                        data: points,
+                        fill: false,
+                        tension: 0.2,
+                        borderWidth: 2
+                    };
+                });
+        
+                trendChart = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: trendDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Transactions Trend (On Hold, Completed, Cut Off)'
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        
+            loadKPI();
+            setInterval(loadKPI, 15000);
+        </script>
+
+
+
+<script>
+  function renderCashierCard(data) {
+    const trendIcon = {
+      up: 'bi-arrow-up text-success',
+      down: 'bi-arrow-down text-danger',
+      equal: 'bi-dash text-muted'
+    };
+
+    return `
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body d-flex flex-column justify-content-between">
+            <!-- Top row: Cashier Name -->
+            <div class="text-center mb-3">
+              <h6 class="fw-bold text-primary mb-0">${data.cashier_name}</h6>
+            </div>
+
+            <!-- Second row: KPI Data -->
+            <div class="d-flex justify-content-between align-items-center">
+              <!-- Today Section -->
+              <div class="text-start">
+                <div class="text-muted small mb-1">Today</div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="display-5 fw-bold">${data.today}</span>
+                  <i class="bi ${trendIcon[data.trend]} fs-4"></i>
+                </div>
+              </div>
+
+              <!-- Yesterday Section -->
+              <div class="text-end">
+                <div class="text-muted small mb-1">Yesterday</div>
+                <span class="fs-6 text-secondary">${data.yesterday}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function loadCashierKPIs() {
+    fetch('kpi-cashier/')
+      .then(res => res.json())
+      .then(({ data }) => {
+        const container = document.getElementById('cashier-kpi-container');
+        container.innerHTML = data.map(renderCashierCard).join('');
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadCashierKPIs();
+    setInterval(loadCashierKPIs, 10000); // auto-refresh every 10s
+  });
+</script>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+
+    </div>
+    </div>
+    
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    fetch("{% url 'admin_dashboard_summary' %}", {
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Failed to fetch dashboard summary.");
+        return response.text();
+    })
+    .then(html => {
+        document.getElementById("dashboard-summary").innerHTML = html;
+    })
+    .catch(error => {
+        console.error("Error refreshing dashboard summary:", error);
+    });
+});
+</script>
+
+
+
+{% endblock %}

@@ -1,0 +1,647 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registration Successful - QueueAU</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #002147;
+      --secondary-blue: #003366;
+      --accent-yellow: #ffc107;
+      --accent-gold: #f7b731;
+      --light-blue: #e3f2fd;
+      --dark-blue: #001a33;
+      --glass-bg: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --shadow-light: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --shadow-medium: 0 12px 40px rgba(0, 0, 0, 0.15);
+      --shadow-heavy: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+         body {
+       background-image: url("{% static 'images/ausouthbg.png' %}");
+       background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Background overlay to match other pages */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, 
+        rgba(0, 33, 71, 0.75) 0%, 
+        rgba(0, 51, 102, 0.7) 25%, 
+        rgba(4, 52, 100, 0.7) 45%, 
+        rgba(247, 183, 49, 0.65) 75%, 
+        rgba(247, 211, 12, 0.7) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .success-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      z-index: 2;
+      justify-content: center;
+      align-items: center;
+    }
+
+         .success-section {
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       padding: 2rem;
+       max-width: 700px;
+     }
+
+     .success-card {
+       background: rgba(255, 255, 255, 0.85);
+       backdrop-filter: blur(25px);
+       -webkit-backdrop-filter: blur(25px);
+       padding: 3rem 3.5rem;
+       border-radius: 20px;
+       box-shadow: 
+         0 20px 60px rgba(0, 0, 0, 0.2),
+         inset 0 1px 0 rgba(255, 255, 255, 0.3),
+         0 0 0 1px rgba(255, 255, 255, 0.2);
+       width: 100%;
+       max-width: 700px;
+       position: relative;
+       overflow: hidden;
+       animation: slideInUp 0.8s ease-out;
+       border: 1px solid rgba(255, 255, 255, 0.3);
+       text-align: center;
+     }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .success-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--accent-yellow);
+    }
+
+
+
+    .success-header {
+      margin-bottom: 2rem;
+    }
+
+    .success-header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--primary-blue);
+      margin-bottom: 0.5rem;
+    }
+
+    .success-header .highlight {
+      color: var(--accent-yellow);
+    }
+
+    .success-header p {
+      color: #718096;
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+
+         .success-icon {
+       margin-bottom: 1.5rem;
+       display: flex;
+       justify-content: center;
+       align-items: center;
+     }
+
+     .success-check {
+       stroke: #28a745;
+       stroke-width: 3;
+       stroke-linecap: round;
+       stroke-linejoin: round;
+       fill: none;
+       animation: scaleUp 0.3s ease-out forwards;
+       display: block;
+       margin: 0 auto;
+       overflow: visible;
+     }
+
+     .checkmark-circle {
+       stroke-dasharray: 176;
+       stroke-dashoffset: 176;
+       animation: strokeCircle 0.6s ease-out forwards;
+     }
+
+     .checkmark-check {
+       stroke-dasharray: 56;
+       stroke-dashoffset: 56;
+       animation: strokeCheck 0.3s 0.6s ease-out forwards;
+     }
+
+     @keyframes strokeCircle { 
+       to { stroke-dashoffset: 0; } 
+     }
+     
+     @keyframes strokeCheck { 
+       to { stroke-dashoffset: 0; } 
+     }
+     
+     @keyframes scaleUp {
+       0% { transform: scale(0.5); opacity: 0; }
+       100% { transform: scale(1); opacity: 1; }
+     }
+
+    .qr-section {
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+    }
+
+    .qr-section:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: var(--accent-yellow);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .qr-section h3 {
+      color: var(--primary-blue);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .qr-code {
+      max-width: 200px;
+      margin: 0 auto 1rem auto;
+      border-radius: 10px;
+      box-shadow: var(--shadow-light);
+    }
+
+    .qr-note {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .download-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--primary-blue);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-light);
+    }
+
+    .download-button:hover {
+      background: var(--secondary-blue);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+      color: white;
+      text-decoration: none;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .btn-primary {
+      padding: 1rem;
+      background: var(--accent-yellow);
+      color: var(--primary-blue);
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: var(--shadow-light);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-gold);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+      color: var(--primary-blue);
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      padding: 1rem;
+      background: transparent;
+      color: var(--primary-blue);
+      border: 2px solid var(--primary-blue);
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary-blue);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+      text-decoration: none;
+    }
+
+    .footer {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: #718096;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1.5rem;
+    }
+
+              /* Responsive design */
+     @media (max-width: 1200px) {
+       .success-section {
+         padding: 2rem;
+         max-width: 650px;
+       }
+       
+       .success-card {
+         padding: 2.5rem 3rem;
+       }
+     }
+     
+     @media (max-width: 992px) {
+       .success-section {
+         padding: 2rem;
+         max-width: 600px;
+       }
+       
+       .success-card {
+         padding: 2.5rem 2rem;
+       }
+       
+       .success-header h1 {
+         font-size: 2rem;
+         line-height: 1.2;
+       }
+       
+       .success-header p {
+         font-size: 0.9rem;
+         line-height: 1.4;
+       }
+     }
+     
+     @media (max-width: 768px) {
+       .success-container {
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         padding: 1rem;
+       }
+       
+       .success-section {
+         max-width: 100%;
+         padding: 1rem;
+         justify-content: center;
+         align-items: center;
+         width: 100%;
+       }
+       
+       .success-card {
+         padding: 2rem 1.5rem;
+         max-width: 450px;
+         margin: 0 auto;
+         border-radius: 15px;
+       }
+       
+       .success-header h1 {
+         font-size: 1.8rem;
+         line-height: 1.2;
+         margin-bottom: 0.75rem;
+       }
+       
+       .success-header p {
+         font-size: 0.9rem;
+         line-height: 1.4;
+         margin-bottom: 1.5rem;
+       }
+       
+       .success-icon {
+         margin-bottom: 1.25rem;
+       }
+       
+       .success-check {
+         width: 70px;
+         height: 70px;
+       }
+       
+       .qr-section {
+         margin: 1.5rem 0;
+         padding: 1.25rem;
+       }
+       
+       .action-buttons {
+         margin: 1.5rem 0;
+         gap: 0.875rem;
+       }
+     }
+     
+     @media (max-width: 576px) {
+       .success-container {
+         padding: 0.5rem;
+       }
+       
+       .success-section {
+         padding: 0.5rem;
+       }
+       
+       .success-card {
+         padding: 1.5rem 1rem;
+         margin: 0.5rem;
+         border-radius: 12px;
+       }
+       
+       .success-header h1 {
+         font-size: 1.6rem;
+         margin-bottom: 0.75rem;
+       }
+       
+       .success-header p {
+         font-size: 0.85rem;
+         margin-bottom: 1.25rem;
+       }
+       
+       .success-icon {
+         margin-bottom: 1rem;
+       }
+       
+       .success-check {
+         width: 60px;
+         height: 60px;
+       }
+       
+       .qr-section {
+         margin: 1.25rem 0;
+         padding: 1rem;
+         border-radius: 10px;
+       }
+       
+       .qr-section h3 {
+         font-size: 1rem;
+         margin-bottom: 0.75rem;
+       }
+       
+       .qr-code {
+         max-width: 180px;
+         margin-bottom: 0.75rem;
+       }
+       
+       .qr-note {
+         font-size: 0.85rem;
+         margin-bottom: 0.75rem;
+       }
+       
+       .download-button {
+         padding: 0.625rem 1.25rem;
+         font-size: 0.85rem;
+         border-radius: 8px;
+       }
+       
+       .action-buttons {
+         gap: 0.75rem;
+         margin: 1.25rem 0;
+       }
+       
+       .btn-primary,
+       .btn-secondary {
+         padding: 0.875rem;
+         font-size: 0.9rem;
+         border-radius: 8px;
+       }
+       
+       .footer {
+         margin-top: 1.5rem;
+         padding-top: 1.25rem;
+         font-size: 0.8rem;
+       }
+     }
+     
+     @media (max-width: 375px) {
+       .success-container {
+         padding: 0.25rem;
+       }
+       
+       .success-card {
+         padding: 1.25rem 0.75rem;
+         margin: 0.25rem;
+         border-radius: 10px;
+       }
+       
+       .success-header h1 {
+         font-size: 1.4rem;
+         margin-bottom: 0.5rem;
+       }
+       
+       .success-header p {
+         font-size: 0.8rem;
+         margin-bottom: 1.25rem;
+       }
+       
+       .success-icon {
+         margin-bottom: 0.875rem;
+       }
+       
+       .success-check {
+         width: 55px;
+         height: 55px;
+       }
+       
+       .qr-section {
+         margin: 1rem 0;
+         padding: 0.875rem;
+         border-radius: 8px;
+       }
+       
+       .qr-section h3 {
+         font-size: 0.95rem;
+         margin-bottom: 0.625rem;
+       }
+       
+       .qr-code {
+         max-width: 160px;
+         margin-bottom: 0.625rem;
+       }
+       
+       .qr-note {
+         font-size: 0.8rem;
+         margin-bottom: 0.625rem;
+       }
+       
+       .download-button {
+         padding: 0.5rem 1rem;
+         font-size: 0.8rem;
+         border-radius: 6px;
+       }
+       
+       .action-buttons {
+         gap: 0.625rem;
+         margin: 1rem 0;
+       }
+       
+       .btn-primary,
+       .btn-secondary {
+         padding: 0.75rem;
+         font-size: 0.85rem;
+         border-radius: 6px;
+       }
+       
+       .footer {
+         margin-top: 1.25rem;
+         padding-top: 1rem;
+         font-size: 0.75rem;
+       }
+     }
+     
+     /* Extra small devices */
+     @media (max-width: 320px) {
+       .success-card {
+         padding: 1rem 0.5rem;
+         margin: 0.125rem;
+         border-radius: 8px;
+       }
+       
+       .success-header h1 {
+         font-size: 1.25rem;
+       }
+       
+       .success-check {
+         width: 50px;
+         height: 50px;
+       }
+       
+       .qr-section {
+         padding: 0.75rem;
+         border-radius: 6px;
+       }
+       
+       .qr-code {
+         max-width: 140px;
+       }
+       
+       .btn-primary,
+       .btn-secondary {
+         padding: 0.625rem;
+         font-size: 0.8rem;
+         border-radius: 5px;
+       }
+     }
+  </style>
+</head>
+<body>
+  <div class="success-container">
+    <!-- Success Section -->
+    <div class="success-section">
+      <div class="success-card">
+                 <div class="success-header">
+           <div class="success-icon">
+             <svg class="success-check" xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 60 60">
+               <circle class="checkmark-circle" cx="30" cy="30" r="28" fill="none"/>
+               <path class="checkmark-check" d="M18 32l8 8 20-20"/>
+             </svg>
+           </div>
+          <h1>Registration <span class="highlight">Successful!</span></h1>
+          <p>The student's information has been successfully recorded.</p>
+        </div>
+
+        <!-- QR Code Section -->
+        <div class="qr-section">
+          <h3>Your QR Code</h3>
+          <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="qr-code">
+          <p class="qr-note">
+            <i class="fas fa-camera"></i>
+            Please take a screenshot or save this QR code now.
+          </p>
+          <a class="download-button" download="student_qr_code.png" href="data:image/png;base64,{{ qr_code }}">
+            <i class="fas fa-download"></i>
+            Download QR Code
+          </a>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <a href="{% url 'register_student' %}" class="btn-primary">
+            <i class="fas fa-user-plus"></i>
+            Register Another Student
+          </a>
+          <a href="{% url 'index' %}" class="btn-secondary">
+            <i class="fas fa-home"></i>
+            Back to Home
+          </a>
+        </div>
+
+        <div class="footer">
+          <p>© 2025 QueueAU | PHINMA AU South Campus</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

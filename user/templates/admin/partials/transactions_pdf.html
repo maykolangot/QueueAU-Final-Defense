@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Helvetica, sans-serif;
+      font-size: 11px;
+      color: #1F2937;
+      margin: 20px;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 4px;
+      color: #111827;
+    }
+
+    h2 {
+      font-size: 16px;
+      margin: 16px 0 12px;
+      color: #111827;
+    }
+
+    h4 {
+      font-size: 12px;
+      margin: 10px 0 4px;
+      color: #374151;
+    }
+
+    p {
+      font-size: 11px;
+      margin: 0 0 4px;
+      color: #4B5563;
+    }
+
+    ul {
+      padding-left: 15px;
+      margin-bottom: 10px;
+    }
+
+    li {
+      margin-bottom: 2px;
+      color: #374151;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 10px;
+    }
+
+    th {
+      background-color: #E5E7EB;
+      border: 1px solid #D1D5DB;
+      padding: 6px;
+      text-align: left;
+      font-weight: bold;
+      color: #374151;
+    }
+
+    td {
+      border: 1px solid #E5E7EB;
+      padding: 6px;
+      vertical-align: top;
+      color: #1F2937;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #F9FAFB;
+    }
+
+    tbody tr:nth-child(odd) {
+      background-color: #FFFFFF;
+    }
+
+    .header-section {
+      border-bottom: 2px solid #E5E7EB;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-section">
+    <h1>QueueAU</h1>
+    <p>A PHINMA Araullo University Queueing Management System</p>
+  </div>
+
+  <div>
+    <h4>Filters Applied:</h4>
+    <ul>
+      <li><strong>Start Date:</strong> {{ filters.start_date }}</li>
+      <li><strong>End Date:</strong> {{ filters.end_date }}</li>
+      <li><strong>Department:</strong> {{ filters.department }}</li>
+      <li><strong>Course:</strong> {{ filters.course }}</li>
+      <li><strong>Campus:</strong> {{ filters.campus }}</li>
+    </ul>
+  </div>
+
+  <h2>Transactions for {{ cashier.name }}</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID #</th>
+        <th>Name</th>
+        <th>Queue #</th>
+        <th>Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for txn in transactions %}
+      <tr>
+        <td>{{ txn.id_number }}</td>
+        <td>{{ txn.name }}</td>
+        <td>{{ txn.queue }}</td>
+        <td>{{ txn.role }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</body>
+</html>

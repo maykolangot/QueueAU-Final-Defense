@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 11px; }
+        h2, p { text-align: center; margin: 0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+            font-size: 10px;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Transaction Report</h2>
+    <p>Cashier: {{ cashier.name }}</p>
+    <p>Window #: {{ cashier.windowNum }} | Email: {{ cashier.email }}</p>
+
+    {% if from_date and to_date %}
+        <p>Filtered Date Range: {{ from_date|date:"F d, Y" }} - {{ to_date|date:"F d, Y" }}</p>
+    {% elif from_date %}
+        <p>From: {{ from_date|date:"F d, Y" }}</p>
+    {% elif to_date %}
+        <p>Up to: {{ to_date|date:"F d, Y" }}</p>
+    {% else %}
+        <p>No date filter applied.</p>
+    {% endif %}
+
+    {% if campus %}
+        <p>Campus: {{ campus }}</p>
+    {% endif %}
+    {% if department %}
+        <p>Department: {{ department.name }}</p>
+    {% endif %}
+    {% if course %}
+        <p>Course: {{ course.name }}</p>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Queue</th>
+                <th>ID Number</th>
+                <th>Name</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for txn in transactions %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ txn.queue }}</td>
+                <td>{{ txn.id_number }}</td>
+                <td>{{ txn.name }}</td>
+                <td>{{ txn.role }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

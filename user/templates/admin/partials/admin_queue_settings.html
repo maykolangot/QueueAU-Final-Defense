@@ -1,0 +1,113 @@
+{% extends 'admin/dashboard-admin.html' %}
+
+
+{% block content %}
+
+<div class="container my-4">
+    <!-- Page Header -->
+    <h2 class="fw-bold mb-4">
+Transaction Cutoff Settings
+    </h2>
+
+    <!-- Alert Message -->
+    {% if message %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Cutoff Form -->
+    <form id="cutoffForm" method="post" class="card shadow-sm p-4 mb-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="campus" class="form-label fw-semibold">Campus <span class="text-muted">(leave blank = all)</span></label>
+            <select name="campus" id="campus" class="form-select">
+                {% for c in campuses %}
+                    <option value="{{ c }}">{{ c|default:"All" }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="cutoff_time" class="form-label fw-semibold">Cutoff Time</label>
+            <input type="datetime-local" name="cutoff_time" id="cutoff_time" class="form-control">
+            <small class="text-muted">Leave blank to apply cutoff immediately</small>
+        </div>
+
+        <div class="d-flex justify-content-center">
+        <button type="button" class="btn btn-danger" style="width: 20%;" data-bs-toggle="modal" data-bs-target="#confirmCutoffModal">
+            <i class="bi bi-scissors"></i> Submit Cutoff
+        </button>
+
+                </div>
+    </form>
+
+    <!-- Divider -->
+    <hr class="my-4">
+
+    <!-- Today's Cutoffs Table -->
+    <h3 class="fw-semibold mb-3">Today's Cutoffs</h3>
+
+    {% if cutoffs_today %}
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Campus</th>
+                    <th scope="col">Cutoff Time</th>
+                    <th scope="col">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cutoff in cutoffs_today %}
+                <tr>
+                    <td>{{ cutoff.campus|default:"All" }}</td>
+                    <td>{{ cutoff.cutoff_time|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        {% if cutoff.is_cutoff %}
+                            <span class="badge bg-success">Executed</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Scheduled</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted">No cutoffs recorded today.</p>
+    {% endif %}
+</div>
+
+<!-- Redesigned Confirmation Modal -->
+<div class="modal fade" id="confirmCutoffModal" tabindex="-1" aria-labelledby="confirmCutoffModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header bg-gradient text-white rounded-top-4 px-4 py-3" style="background: linear-gradient(135deg, #f9a825, #f57c00);">
+        <h5 class="modal-title fw-semibold" id="confirmCutoffModalLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirm Cutoff
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center px-5 py-4">
+        <p class="fs-5 mb-2">
+          <i class="bi bi-exclamation-circle text-warning fs-3 d-block mb-2"></i>
+          <strong>Warning:</strong> This action is <u>irreversible</u>.
+        </p>
+        <p class="text-muted mb-0">Are you absolutely sure you want to apply the cutoff?</p>
+      </div>
+      <div class="modal-footer justify-content-center border-0 pb-4">
+        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-danger px-4" form="cutoffForm">Yes, Apply Cutoff</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+{% endblock %}

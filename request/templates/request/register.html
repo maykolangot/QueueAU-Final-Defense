@@ -1,0 +1,1394 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registration - QueueAU</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <style>
+    :root {
+      --primary-blue: #002147;
+      --secondary-blue: #003366;
+      --accent-yellow: #ffc107;
+      --accent-gold: #f7b731;
+      --light-blue: #e3f2fd;
+      --dark-blue: #001a33;
+      --glass-bg: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --shadow-light: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --shadow-medium: 0 12px 40px rgba(0, 0, 0, 0.15);
+      --shadow-heavy: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-image: url("{% static 'images/bg.png' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background overlay to match login.html */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, 
+        rgba(0, 33, 71, 0.75) 0%, 
+        rgba(0, 51, 102, 0.7) 25%, 
+        rgba(4, 52, 100, 0.7) 45%, 
+        rgba(247, 183, 49, 0.65) 75%, 
+        rgba(247, 211, 12, 0.7) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .register-container {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+      position: relative;
+      z-index: 2;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 1rem 0;
+    }
+
+    .register-form-section {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .register-card {
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.9) 0%, 
+        rgba(255, 255, 255, 0.7) 50%, 
+        rgba(255, 255, 255, 0.8) 100%);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      padding: 1rem 1.5rem;
+      border-radius: 20px;
+      box-shadow: 
+        0 15px 40px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.3),
+        0 0 20px rgba(255, 193, 7, 0.1);
+      width: 100%;
+      max-width: 600px;
+      position: relative;
+      overflow: visible;
+      animation: slideInLeft 0.8s ease-out;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      transform-style: preserve-3d;
+    }
+
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .register-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 2px;
+      right: 2px;
+      height: 4px;
+      background: linear-gradient(90deg, 
+        var(--accent-yellow) 0%, 
+        var(--accent-gold) 50%, 
+        var(--accent-yellow) 100%);
+      border-radius: 18px 18px 0 0;
+      z-index: -1;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--primary-blue);
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 33, 71, 0.1);
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 1);
+      border-color: var(--accent-yellow);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-light);
+    }
+
+    .register-header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .register-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary-blue);
+      margin-bottom: 0.5rem;
+    }
+
+    .register-header .highlight {
+      color: var(--accent-yellow);
+    }
+
+    .register-header p {
+      color: #718096;
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+
+    .form-group {
+      margin-bottom: 0.75rem;
+      position: relative;
+      width: 100%;
+      clear: both;
+      overflow: hidden;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: var(--primary-blue);
+      margin-bottom: 0.35rem;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+      display: block;
+      clear: both;
+      overflow: visible;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a0aec0;
+      transition: color 0.3s ease;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .input-wrapper .password-toggle {
+      left: auto;
+      right: 1rem;
+      cursor: pointer;
+      z-index: 10;
+      pointer-events: auto;
+    }
+
+    .input-wrapper .password-toggle:hover {
+      color: var(--accent-yellow);
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 1rem 1rem 1rem 3rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.8);
+      box-sizing: border-box;
+      display: block;
+      clear: both;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent-yellow);
+      box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
+      background: rgba(255, 255, 255, 1);
+    }
+
+    .form-group input:focus + i,
+    .form-group select:focus + i {
+      color: var(--accent-yellow);
+    }
+
+    .recaptcha-container {
+      display: flex;
+      justify-content: center;
+      margin: 1.25rem 0;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .register-button {
+      width: 100%;
+      padding: 1rem;
+      background: var(--primary-blue);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: var(--shadow-light);
+    }
+
+    .register-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .register-button:hover::before {
+      left: 100%;
+    }
+
+    .register-button:hover {
+      background: var(--secondary-blue);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .register-button:active {
+      transform: translateY(0);
+    }
+
+    .message-container {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-left: 4px solid;
+      animation: slideInDown 0.5s ease-out;
+    }
+
+    @keyframes slideInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-container.success {
+      background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+      color: #22543d;
+      border-left-color: #38a169;
+    }
+
+    .message-container.error {
+      background: linear-gradient(135deg, #fed7d7, #feb2b2);
+      color: #742a2a;
+      border-left-color: #e53e3e;
+    }
+
+    .message-container.warning {
+      background: linear-gradient(135deg, #fef5e7, #fbd38d);
+      color: #744210;
+      border-left-color: #d69e2e;
+    }
+
+    .message-container.info {
+      background: linear-gradient(135deg, #bee3f8, #90cdf4);
+      color: #2a4365;
+      border-left-color: #3182ce;
+    }
+
+    .invalid-feedback {
+      color: #e53e3e;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: rgba(229, 62, 62, 0.1);
+      border-radius: 8px;
+      border-left: 3px solid #e53e3e;
+      animation: slideInDown 0.3s ease-out;
+    }
+
+    /* Enhanced Responsive Design - No Overlapping */
+    /* Additional safeguards to prevent overlapping */
+    .register-card > * {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    
+    .input-wrapper:after {
+      content: '';
+      display: table;
+      clear: both;
+    }
+    
+    /* Compact spacing for shorter form */
+    .back-btn {
+      margin-bottom: 1.25rem;
+    }
+    
+    .register-header h1 {
+      margin-bottom: 0.4rem;
+    }
+    
+    .form-group label {
+      margin-bottom: 0.4rem;
+    }
+    
+    /* Ensure no overlapping on focus */
+    .form-group:focus-within {
+      z-index: 10;
+    }
+    
+    .input-wrapper:focus-within {
+      z-index: 10;
+    }
+    
+    @media (max-width: 1400px) {
+      .register-form-section {
+        max-width: 550px;
+        padding: 1rem;
+      }
+      
+      .register-card {
+        padding: 2rem 2rem;
+        max-width: 550px;
+      }
+    }
+    
+    @media (max-width: 1200px) {
+      .register-form-section {
+        max-width: 500px;
+        padding: 1rem;
+      }
+      
+      .register-card {
+        padding: 2rem 1.75rem;
+        max-width: 500px;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .register-form-section {
+        max-width: 450px;
+        padding: 1rem;
+      }
+      
+      .register-card {
+        padding: 1.75rem 1.5rem;
+        max-width: 450px;
+      }
+      
+      .register-header h1 {
+        font-size: 1.8rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .register-container {
+        height: auto;
+        min-height: 100vh;
+        padding: 1rem 0;
+      }
+      
+      .register-form-section {
+        max-width: 100%;
+        padding: 1rem;
+        width: 100%;
+        min-height: auto;
+      }
+      
+      .register-card {
+        padding: 1.5rem 1.25rem;
+        max-width: 400px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      
+      /* Mobile-specific safeguards */
+      .form-group {
+        clear: both;
+        float: none;
+        width: 100%;
+        margin-bottom: 1.25rem;
+      }
+      
+      .input-wrapper {
+        clear: both;
+        float: none;
+        width: 100%;
+      }
+      
+      .form-group input,
+      .form-group select {
+        clear: both;
+        float: none;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      
+      .register-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.75rem;
+      }
+      
+      .register-header p {
+        font-size: 0.9rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      
+      .form-group label {
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.875rem 0.875rem 0.875rem 2.75rem;
+        font-size: 0.95rem;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.9rem;
+      }
+      
+      .recaptcha-container {
+        margin: 1rem 0;
+        transform: scale(0.85);
+        transform-origin: center;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .register-container {
+        padding: 0.5rem 0;
+      }
+      
+      .register-form-section {
+        padding: 0.5rem;
+      }
+      
+      .register-card {
+        padding: 1.5rem 1rem;
+        margin: 0.5rem;
+        border-radius: 16px;
+        max-width: 350px;
+      }
+      
+      .register-header h1 {
+        font-size: 1.6rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .register-header p {
+        font-size: 0.85rem;
+      }
+      
+      .form-group {
+        margin-bottom: 0.9rem;
+      }
+      
+      .form-group label {
+        font-size: 0.8rem;
+        margin-bottom: 0.3rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.8rem 0.8rem 0.8rem 2.5rem;
+        font-size: 0.9rem;
+        border-radius: 10px;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.85rem;
+        left: 0.75rem;
+      }
+      
+      .input-wrapper .password-toggle {
+        right: 0.75rem;
+        font-size: 0.85rem;
+      }
+      
+      .register-button {
+        padding: 0.875rem;
+        font-size: 0.9rem;
+        border-radius: 10px;
+      }
+      
+      .back-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        margin-bottom: 1.25rem;
+      }
+      
+      .recaptcha-container {
+        margin: 0.75rem 0;
+        transform: scale(0.8);
+      }
+      
+      .message-container {
+        margin-bottom: 1.25rem;
+        padding: 0.875rem;
+        font-size: 0.85rem;
+      }
+      
+      .invalid-feedback {
+        font-size: 0.8rem;
+        padding: 0.4rem;
+        margin-top: 0.4rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .register-card {
+        padding: 1.5rem 1rem;
+        max-width: 350px;
+        margin: 0.25rem;
+      }
+      
+      .register-header h1 {
+        font-size: 1.5rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.75rem 0.75rem 0.75rem 2.25rem;
+        font-size: 0.85rem;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.8rem;
+        left: 0.7rem;
+      }
+      
+      .input-wrapper .password-toggle {
+        right: 0.7rem;
+        font-size: 0.8rem;
+      }
+    }
+    
+    @media (max-width: 375px) {
+      .register-card {
+        padding: 1.25rem 0.75rem;
+        max-width: 320px;
+        margin: 0.25rem;
+        border-radius: 14px;
+      }
+      
+      .register-header h1 {
+        font-size: 1.4rem;
+        margin-bottom: 0.4rem;
+      }
+      
+      .register-header p {
+        font-size: 0.8rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      
+      .form-group label {
+        font-size: 0.75rem;
+        margin-bottom: 0.3rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.7rem 0.7rem 0.7rem 2.1rem;
+        font-size: 0.8rem;
+        border-radius: 8px;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.75rem;
+        left: 0.65rem;
+      }
+      
+      .input-wrapper .password-toggle {
+        right: 0.65rem;
+        font-size: 0.75rem;
+      }
+      
+      .register-button {
+        padding: 0.8rem;
+        font-size: 0.85rem;
+        border-radius: 8px;
+      }
+      
+      .back-btn {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+      }
+      
+      .recaptcha-container {
+        margin: 0.875rem 0;
+        transform: scale(0.8);
+      }
+      
+      .message-container {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        font-size: 0.8rem;
+      }
+      
+      .invalid-feedback {
+        font-size: 0.75rem;
+        padding: 0.35rem;
+        margin-top: 0.35rem;
+      }
+    }
+    
+    @media (max-width: 320px) {
+      .register-card {
+        padding: 1rem 0.5rem;
+        max-width: 280px;
+        margin: 0.25rem;
+        border-radius: 12px;
+      }
+      
+      .register-header h1 {
+        font-size: 1.3rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.65rem 0.65rem 0.65rem 2rem;
+        font-size: 0.8rem;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.7rem;
+        left: 0.6rem;
+      }
+      
+      .input-wrapper .password-toggle {
+        right: 0.6rem;
+        font-size: 0.7rem;
+      }
+      
+      .register-button {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+      }
+      
+      /* Extra small screen safeguards */
+      .form-group {
+        margin-bottom: 1rem;
+        clear: both;
+        float: none;
+      }
+      
+      .input-wrapper {
+        clear: both;
+        float: none;
+        width: 100%;
+      }
+      
+      .form-group input,
+      .form-group select {
+        clear: both;
+        float: none;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+      }
+    }
+    
+    /* Landscape orientation fixes for mobile */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .register-container {
+        height: auto;
+        min-height: 100vh;
+        padding: 0.5rem 0;
+      }
+      
+      .register-card {
+        padding: 1.5rem 2rem;
+        margin: 0.5rem auto;
+      }
+      
+      .register-header {
+        margin-bottom: 1.5rem;
+      }
+      
+      .register-header h1 {
+        font-size: 1.6rem;
+        margin-bottom: 0.3rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      
+      .recaptcha-container {
+        margin: 1rem 0;
+        transform: scale(0.9);
+      }
+    }
+
+    /* Loading animation for button */
+    .register-button.loading {
+      pointer-events: none;
+    }
+
+    .register-button.loading::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      margin-left: -10px;
+      margin-top: -10px;
+      border: 2px solid transparent;
+      border-top: 2px solid var(--primary-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Enhanced Responsive Design - No Overlapping */
+    /* Additional safeguards to prevent overlapping */
+    .register-card > * {
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Ensure yellow line stays within bounds */
+    .register-card::before {
+      overflow: hidden;
+      border-radius: inherit;
+    }
+    
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    
+    .input-wrapper:after {
+      content: '';
+      display: table;
+      clear: both;
+    }
+    
+    /* Prevent scrolling - ensure form fits on one page */
+    .register-container {
+      overflow: visible;
+    }
+    
+    .register-card {
+      max-height: none;
+      overflow: visible;
+    }
+    
+    /* Compact spacing for ultra-short form */
+    .register-header {
+      margin-bottom: 0.75rem;
+    }
+    
+    .form-group {
+      margin-bottom: 0.75rem;
+    }
+    
+    /* Ensure no overlapping on focus */
+    .form-group:focus-within {
+      z-index: 10;
+    }
+    
+    .input-wrapper:focus-within {
+      z-index: 10;
+    }
+    
+    /* Ensure form content is fully visible */
+    .register-card {
+      margin: 1rem 0;
+    }
+    
+    /* Better spacing for form elements */
+    .form-group:last-child {
+      margin-bottom: 1rem;
+    }
+    
+    /* Ensure buttons have proper spacing */
+    .register-button:last-child {
+      margin-bottom: 1rem;
+    }
+    
+    /* Optimize for very small screens */
+    @media (max-height: 600px) {
+      .register-card {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      .register-header h1 {
+        font-size: 1.4rem;
+        margin-bottom: 0.2rem;
+      }
+      
+      .form-group {
+        margin-bottom: 0.5rem;
+      }
+      
+      .form-group label {
+        font-size: 0.75rem;
+        margin-bottom: 0.2rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.5rem 0.5rem 0.5rem 2rem;
+        font-size: 0.8rem;
+      }
+      
+      .register-button {
+        padding: 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+    }
+    
+    /* Ultra-compact for very small heights */
+    @media (max-height: 500px) {
+      .register-card {
+        padding: 0.4rem 0.5rem;
+      }
+      
+      .register-header h1 {
+        font-size: 1.2rem;
+        margin-bottom: 0.15rem;
+      }
+      
+      .register-header p {
+        font-size: 0.8rem;
+      }
+      
+      .form-group {
+        margin-bottom: 0.4rem;
+      }
+      
+      .form-group label {
+        font-size: 0.75rem;
+        margin-bottom: 0.2rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.5rem 0.5rem 0.5rem 2rem;
+        font-size: 0.8rem;
+      }
+      
+      .register-button {
+        padding: 0.5rem;
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+      }
+    }
+    
+    /* Responsive breakpoints for different screen widths */
+    @media (max-width: 1400px) {
+      .register-form-section {
+        max-width: 550px;
+        padding: 0.75rem;
+      }
+      
+      .register-card {
+        padding: 1.5rem 1.75rem;
+        max-width: 550px;
+      }
+    }
+    
+    @media (max-width: 1200px) {
+      .register-form-section {
+        max-width: 500px;
+        padding: 0.75rem;
+      }
+      
+      .register-card {
+        padding: 1.5rem 1.5rem;
+        max-width: 500px;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .register-form-section {
+        max-width: 450px;
+        padding: 0.75rem;
+      }
+      
+      .register-card {
+        padding: 1.25rem 1.25rem;
+        max-width: 450px;
+      }
+      
+      .register-header h1 {
+        font-size: 1.6rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .register-container {
+        height: auto;
+        min-height: 100vh;
+        padding: 1rem 0;
+      }
+      
+      .register-form-section {
+        max-width: 100%;
+        padding: 1rem;
+        width: 100%;
+        min-height: auto;
+      }
+      
+      .register-card {
+        padding: 1.5rem 1.25rem;
+        max-width: 400px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      
+      /* Mobile-specific safeguards */
+      .form-group {
+        clear: both;
+        float: none;
+        width: 100%;
+        margin-bottom: 1rem;
+      }
+      
+      .input-wrapper {
+        clear: both;
+        float: none;
+        width: 100%;
+      }
+      
+      .form-group input,
+      .form-group select {
+        clear: both;
+        float: none;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      
+      .register-header h1 {
+        font-size: 1.7rem;
+        margin-bottom: 0.75rem;
+      }
+      
+      .register-header p {
+        font-size: 0.9rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+      
+      .form-group label {
+        font-size: 0.85rem;
+        margin-bottom: 0.4rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.875rem 0.875rem 0.875rem 2.75rem;
+        font-size: 0.95rem;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.9rem;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .register-container {
+        padding: 0.5rem 0;
+      }
+      
+      .register-form-section {
+        padding: 0.5rem;
+      }
+      
+      .register-card {
+        padding: 1.25rem 1rem;
+        margin: 0.5rem;
+        border-radius: 18px;
+        max-width: 320px;
+      }
+      
+      .register-header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .register-header p {
+        font-size: 0.85rem;
+      }
+      
+      .form-group {
+        margin-bottom: 0.9rem;
+      }
+      
+      .form-group label {
+        font-size: 0.75rem;
+        margin-bottom: 0.3rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.8rem 0.8rem 0.8rem 2.5rem;
+        font-size: 0.9rem;
+        border-radius: 12px;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.85rem;
+        left: 0.75rem;
+      }
+      
+      .register-button {
+        padding: 0.875rem;
+        font-size: 0.9rem;
+        border-radius: 15px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .register-card {
+        padding: 1.5rem 1rem;
+        max-width: 320px;
+        margin: 0.25rem;
+      }
+      
+      .register-header h1 {
+        font-size: 1.4rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.75rem 0.75rem 0.75rem 2.25rem;
+        font-size: 0.85rem;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.8rem;
+        left: 0.7rem;
+      }
+    }
+    
+    @media (max-width: 375px) {
+      .register-card {
+        padding: 1.25rem 0.75rem;
+        max-width: 300px;
+        margin: 0.25rem;
+        border-radius: 18px;
+      }
+      
+      .register-header h1 {
+        font-size: 1.3rem;
+        margin-bottom: 0.4rem;
+      }
+      
+      .register-header p {
+        font-size: 0.8rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      
+      .form-group label {
+        font-size: 0.75rem;
+        margin-bottom: 0.3rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.7rem 0.7rem 0.7rem 2.1rem;
+        font-size: 0.8rem;
+        border-radius: 10px;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.75rem;
+        left: 0.65rem;
+      }
+      
+      .register-button {
+        padding: 0.8rem;
+        font-size: 0.85rem;
+        border-radius: 12px;
+      }
+    }
+    
+    @media (max-width: 320px) {
+      .register-card {
+        padding: 1rem 0.5rem;
+        max-width: 280px;
+        margin: 0.25rem;
+        border-radius: 16px;
+      }
+      
+      .register-header h1 {
+        font-size: 1.2rem;
+      }
+      
+      .form-group input,
+      .form-group select {
+        padding: 0.65rem 0.65rem 0.65rem 2rem;
+        font-size: 0.8rem;
+      }
+      
+      .input-wrapper i {
+        font-size: 0.7rem;
+        left: 0.6rem;
+      }
+    }
+    
+    /* Landscape orientation fixes for mobile */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .register-container {
+        height: auto;
+        min-height: 100vh;
+        padding: 0.5rem 0;
+      }
+      
+      .register-card {
+        padding: 1.5rem 2rem;
+        margin: 0.5rem auto;
+      }
+      
+      .register-header {
+        margin-bottom: 1.5rem;
+      }
+      
+      .register-header h1 {
+        font-size: 1.6rem;
+        margin-bottom: 0.3rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <!-- Register Form Section (Left Side) -->
+    <div class="register-form-section">
+      <div class="register-card">
+        <a href="javascript:history.back()" class="back-btn">
+          <i class="fas fa-arrow-left"></i>
+          Back
+        </a>
+        
+                 <div class="register-header">
+           <h1>Registration</h1>
+           <p>Create your QueueAU account</p>
+         </div>
+
+        {% if form.non_field_errors %}
+          <div class="message-container error">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <form method="post" id="registerForm">
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label for="{{ form.name.id_for_label }}">Full Name</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user"></i>
+              {{ form.name }}
+            </div>
+            {% if form.name.errors %}
+              <div class="invalid-feedback">
+                {{ form.name.errors|join:", " }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">Email Address</label>
+            <div class="input-wrapper">
+              <i class="fas fa-envelope"></i>
+              {{ form.email }}
+            </div>
+            {% if form.email.errors %}
+              <div class="invalid-feedback">
+                {{ form.email.errors|join:", " }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.password1.id_for_label }}">Password</label>
+            <div class="input-wrapper">
+              <i class="fas fa-lock"></i>
+              {{ form.password1 }}
+              <i class="fas fa-eye password-toggle" id="password1Toggle"></i>
+            </div>
+            {% if form.password1.errors %}
+              <div class="invalid-feedback">
+                {{ form.password1.errors|join:", " }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+            <div class="input-wrapper">
+              <i class="fas fa-lock"></i>
+              {{ form.password2 }}
+              <i class="fas fa-eye password-toggle" id="password2Toggle"></i>
+            </div>
+            {% if form.password2.errors %}
+              <div class="invalid-feedback">
+                {{ form.password2.errors|join:", " }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="recaptcha-container">
+            <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+          </div>
+
+                     <button type="submit" class="register-button">
+             <span class="button-text">Register</span>
+           </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Form submission with loading state
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+      const button = document.querySelector('.register-button');
+      const buttonText = button.querySelector('.button-text');
+      
+      button.classList.add('loading');
+      buttonText.style.opacity = '0';
+      
+      // Re-enable after 3 seconds if form doesn't submit
+      setTimeout(() => {
+        button.classList.remove('loading');
+        buttonText.style.opacity = '1';
+      }, 3000);
+    });
+
+    // Input focus effects - fixed overlapping
+    document.querySelectorAll('.form-group input, .form-group select').forEach(input => {
+      input.addEventListener('focus', function() {
+        this.parentElement.parentElement.style.transform = 'translateY(-2px)';
+        this.parentElement.parentElement.style.boxShadow = '0 8px 25px rgba(255, 193, 7, 0.2)';
+      });
+      
+      input.addEventListener('blur', function() {
+        this.parentElement.parentElement.style.transform = 'translateY(0)';
+        this.parentElement.parentElement.style.boxShadow = '0 3px 12px rgba(0, 0, 0, 0.1)';
+      });
+    });
+
+    // Password visibility toggle for password1
+    const password1Toggle = document.getElementById('password1Toggle');
+    const password1Input = document.querySelector('input[name="password1"]');
+
+    password1Toggle.addEventListener('click', function() {
+      const type = password1Input.getAttribute('type') === 'password' ? 'text' : 'password';
+      password1Input.setAttribute('type', type);
+      
+      // Change icon
+      if (type === 'text') {
+        this.classList.remove('fa-eye');
+        this.classList.add('fa-eye-slash');
+      } else {
+        this.classList.remove('fa-eye-slash');
+        this.classList.add('fa-eye');
+      }
+    });
+
+    // Password visibility toggle for password2
+    const password2Toggle = document.getElementById('password2Toggle');
+    const password2Input = document.querySelector('input[name="password2"]');
+
+    password2Toggle.addEventListener('click', function() {
+      const type = password2Input.getAttribute('type') === 'password' ? 'text' : 'password';
+      password2Input.setAttribute('type', type);
+      
+      // Change icon
+      if (type === 'text') {
+        this.classList.remove('fa-eye');
+        this.classList.add('fa-eye-slash');
+      } else {
+        this.classList.remove('fa-eye-slash');
+        this.classList.add('fa-eye');
+      }
+    });
+  </script>
+</body>
+</html>
+

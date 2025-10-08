@@ -1,0 +1,865 @@
+{% extends 'admin/dashboard-admin.html' %}
+{% load static %}
+{% block content %}
+<h2>Statistics</h2>
+
+
+<div>
+    <div class="container my-4">
+        <form class="row g-3 align-items-end">
+            
+            <!-- Campus Filter -->
+            <div class="col-md-3">
+            <label for="campusFilter" class="form-label">Campus</label>
+            <select id="campusFilter" class="form-select">
+                <option value="">All</option>
+                <option value="Main">Main</option>
+                <option value="San Jose">San Jose</option>
+                <option value="South">South</option>
+            </select>
+            </div>
+
+            <!-- Department Filter -->
+            <div class="col-md-3">
+            <label for="departmentFilter" class="form-label">Department</label>
+            <select id="departmentFilter" class="form-select">
+                <option value="">All</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+            </div>
+
+            <!-- Course Filter -->
+            <div class="col-md-3">
+            <label for="courseFilter" class="form-label">Course</label>
+            <select id="courseFilter" class="form-select">
+                <option value="">All</option>
+                {% for course in courses %}
+                <option value="{{ course.id }}" data-dept="{{ course.department.id }}">{{ course.name }}</option>
+                {% endfor %}
+            </select>
+            </div>
+
+            <!-- Time Filter -->
+            <div class="col-md-2">
+              <label for="timeFilter" class="form-label">Time</label>
+              <select id="timeFilter" class="form-select">
+                <option value="today">Today</option>
+                <option value="last_7_days" selected>Last 7 Days</option>
+                <option value="weekly">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="monthly">Monthly (This Year)</option>
+              </select>
+            </div>
+
+
+
+            <!-- Apply Button -->
+            <div class="col-md-1 d-grid">
+            <button type="button" class="btn btn-primary" onclick="loadStatistics()">Apply</button>
+            </div>
+
+        </form>
+
+        <div class="mt-3">
+    <button
+        type="button"
+        class="btn btn-success"
+        onclick="generateReport()"
+        title="Apply the necessary filters before printing"
+        data-bs-toggle="tooltip"
+        data-bs-placement="top"
+    >
+    <i class="bi bi-printer-fill me-1"></i>
+        Print Report
+    </button>
+    </div>
+    </div>
+
+    
+
+</div>
+
+
+
+
+
+<div class="container-fluid">
+
+  <!-- Row 1: Forecast -->
+  <div class="row mb-4">
+    <!-- Forecast Chart -->
+    <div class="col-md-9 position-relative">
+      <div id="forecastChart"></div>
+
+      <div id="spinner-forecastChart" class="spinner-overlay d-flex justify-content-center align-items-center">
+        <div class="spinner-border text-info"></div>
+      </div>
+    </div>
+    <!-- Forecast Summary -->
+    <div class="col-md-3">
+      <div id="forecastSummaryCard" class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">Forecast Summary</h5>
+          <p class="mb-1">
+            Forecast for Today:
+            <span id="forecastTodayValue" class="fw-bold"></span>
+            <span id="forecastTrendIcon"></span>
+          </p>
+          <p class="mb-0">
+            Actual Count of Requested Transactions:
+            <span id="actualTodayValue" class="fw-bold text-primary"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Transactions, Type & Status Donut -->
+  <div class="row mb-4">
+    <!-- Transactions Chart -->
+    <div class="col-md-4 position-relative">
+      <div id="transactionsChart"></div>
+      <div id="spinner-transactionsChart"
+           class="spinner-overlay d-none d-flex justify-content-center align-items-center">
+        <div class="spinner-border text-info"></div>
+      </div>
+    </div>
+
+    <!-- Transaction Type Chart -->
+    <div class="col-md-4 position-relative">
+      <div id="transactionTypeChart" class="w-100 h-100"></div>
+      <div id="spinner-transactionTypeChart"
+           class="spinner-overlay d-none d-flex justify-content-center align-items-center">
+        <div class="spinner-border text-info"></div>
+      </div>
+    </div>
+
+    <!-- Status Donut Chart -->
+    <div class="col-md-4 position-relative">
+      <div id="statusDonutChart" class="w-100 h-100"></div>
+      <div id="spinner-statusDonutChart"
+           class="spinner-overlay d-none d-flex justify-content-center align-items-center">
+        <div class="spinner-border text-info"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Row 3: Treemap + Status & Hourly -->
+  <div class="row mb-4">
+    <div class="col-md-6 position-relative">
+      <div id="transactionTreemapChart" class="plotly-div w-100 h-100"></div>
+      <div id="spinner-transactionTreemapChart" class="spinner-overlay d-flex justify-content-center align-items-center">
+        <div class="spinner-border text-info"></div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="mb-4 position-relative">
+        <div id="statusByDepartmentChart" class="w-100 h-100"></div>
+        <div id="spinner-statusByDepartmentChart" class="spinner-overlay d-flex justify-content-center align-items-center">
+          <div class="spinner-border text-info"></div>
+        </div>
+      </div>
+
+      <div class="position-relative">
+        <div id="heatmapByHour"></div>
+        <div id="spinner-heatmapByHour" class="spinner-overlay d-flex justify-content-center align-items-center">
+          <div class="spinner-border text-info"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 4: Heatmap -->
+  <div class="row mb-4">
+    <div class="col-12 position-relative">
+      <div id="heatmap"></div>
+      <div id="spinner-heatmap" class="spinner-overlay d-flex justify-content-center align-items-center">
+        <div class="spinner-border text-info"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<style>
+  .spinner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  display: none;
+  z-index: 10;
+}
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+<!-- Bawal Galawin -->
+<script>
+
+
+    function showChartSpinner(id) {
+      const el = document.getElementById(`spinner-${id}`);
+      if (el) el.classList.remove('d-none');
+    }
+    
+    
+    function hideChartSpinner(id) {
+      const el = document.getElementById(`spinner-${id}`);
+      if (el) el.classList.add('d-none');
+    }
+
+
+    function loadStatistics() {
+      const campus     = document.getElementById("campusFilter").value;
+      const department = document.getElementById("departmentFilter").value;
+      const course     = document.getElementById("courseFilter").value;
+      const time       = document.getElementById("timeFilter").value;
+      const params     = new URLSearchParams({ campus, department, course, time });
+
+      const charts = [
+        'transactionsChart','transactionTypeChart','statusDonutChart',
+        'transactionTreemapChart','statusByDepartmentChart',
+        'heatmap','heatmapByHour','forecastChart'
+      ];
+      charts.forEach(showChartSpinner);
+
+      Promise.all([
+        fetch(`data/?${params}`).then(r => r.json()),
+        fetch(`treemap/?${params}`).then(r => r.json()),
+        fetch(`transaction-types/?${params}`).then(r => r.json()),
+        fetch(`status-donut/?${params}`).then(r => r.json()),
+        fetch(`status-by-department/?${params}`).then(r => r.json()),
+        fetch(`heatmap-time/?${params}`).then(r => r.json()),
+        fetch(`heatmap-hourly/?${params}`).then(r => r.json()),
+        fetch(`forecast/?${params}`).then(r => r.json())
+      ])
+      .then(([transactionsData, treemapData, typesData, donutData, deptStatusData, heatmapTimeData, heatmapByHourData, forecastData]) => {
+        renderChart(transactionsData);
+        renderTransactionTreemapChart(treemapData);
+        renderTransactionTypeChart(typesData);
+        renderStatusDonutChart(donutData);
+        renderStatusByDepartmentChart(deptStatusData);
+        renderTransactionHeatmapTime(heatmapTimeData);
+        renderTransactionHeatmapByHour(heatmapByHourData);
+        renderForecastChart(forecastData);
+      })
+      .catch(err => console.error("Failed to load stats:", err))
+      .finally(() => charts.forEach(hideChartSpinner));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // initial run
+      loadStatistics();
+      // re-run on any filter change
+      ['campusFilter','departmentFilter','courseFilter','timeFilter']
+        .forEach(id =>
+          document.getElementById(id)
+                  .addEventListener('change', loadStatistics)
+        );
+    });
+
+
+
+
+// Chart 1
+let transactionsChart;
+function renderChart(data) {
+    const chartEl = document.querySelector('#transactionsChart');
+    if (!chartEl) return;
+
+    // Destroy previous Apex chart
+    if (transactionsChart) {
+        transactionsChart.destroy();
+    }
+
+    // Convert Chart.js datasets to ApexCharts series
+    const series = data.datasets.map(ds => ({
+        name: ds.label,
+        data: ds.data
+    }));
+
+    const options = {
+        chart: {
+            type: 'bar',
+            height: 400,
+            toolbar: { show: false }
+        },
+        title: {
+            text: 'Completed Transactions',
+            align: 'left'
+        },
+        xaxis: {
+            categories: data.labels,
+            title: { text: 'Date' },
+            labels: { rotate: -45 }
+        },
+        yaxis: {
+            title: { text: 'Transactions' },
+            min: 0
+        },
+        tooltip: {
+            shared: true,
+            intersect: false
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        legend: {
+            position: 'top'
+        },
+        colors: ['#00C49F', '#FF8042', '#008FFB', '#FF4560', '#775DD0'],
+        series: series
+    };
+
+    transactionsChart = new ApexCharts(chartEl, options);
+    transactionsChart.render();
+}
+
+
+// Chart 
+let transactionTypeChart;
+function renderTransactionTypeChart(data) {
+    const el = document.querySelector('#transactionTypeChart');
+    if (!el) return;
+
+    if (transactionTypeChart) transactionTypeChart.destroy();
+
+    const series = data.datasets.map(ds => ({
+        name: ds.label,
+        data: ds.data
+    }));
+
+    const options = {
+        chart: {
+            type: 'bar',
+            height: 400,
+            toolbar: { show: false }
+        },
+        title: {
+            text: 'Completed Transactions by Type',
+            align: 'left'
+        },
+        xaxis: {
+            categories: data.labels,
+            title: { text: 'Transaction Type' },
+            labels: {
+                rotate: -45,
+                trim: true
+            }
+        },
+        yaxis: {
+            title: { text: 'Count' },
+            min: 0
+        },
+        tooltip: {
+            shared: true,
+            intersect: false
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%'
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        legend: {
+            position: 'top'
+        },
+        colors: ['#008FFB', '#FF4560', '#00E396', '#FEB019'],
+        series: series
+    };
+
+    transactionTypeChart = new ApexCharts(el, options);
+    transactionTypeChart.render();
+}
+
+
+// Chart 3
+let statusDonutChart;
+
+function renderStatusDonutChart(data) {
+    const el = document.querySelector('#statusDonutChart');
+    if (!el) return;
+
+    if (statusDonutChart) statusDonutChart.destroy();
+
+    if (!data.labels.length || !data.datasets.length) {
+        console.warn("No data for status chart.");
+        return;
+    }
+
+    const series = data.datasets[0].data;
+    const labels = data.labels;
+    const colors = data.datasets[0].backgroundColor;
+
+    const options = {
+        chart: {
+            type: 'donut',
+            height: 350
+        },
+        labels: labels,
+        series: series,
+        title: {
+            text: 'Transaction Status Breakdown',
+            align: 'left',
+            style: {
+                fontSize: '16px'
+            }
+        },
+        legend: {
+            position: 'right'
+        },
+        tooltip: {
+            y: {
+                formatter: val => `${val} transactions`
+            }
+        },
+        colors: colors
+    };
+
+    statusDonutChart = new ApexCharts(el, options);
+    statusDonutChart.render();
+}
+
+// Chart 4
+function renderStatusByDepartmentChart(data) {
+    const chartContainer = document.querySelector('#statusByDepartmentChart');
+
+    if (!data || !data.labels.length || !data.datasets.length) {
+        console.warn("No data for department status chart.");
+        return;
+    }
+
+    // Convert Chart.js dataset to ApexCharts format
+    const series = data.datasets.map(dataset => ({
+        name: dataset.label,
+        data: dataset.data
+    }));
+
+    const options = {
+        chart: {
+            type: 'bar',
+            height: 350,
+            toolbar: {
+                show: false
+            }
+        },
+        series: series,
+        xaxis: {
+            categories: data.labels,
+            title: {
+                text: 'Department'
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Number of Transactions'
+            },
+            min: 0
+        },
+        tooltip: {
+            shared: true,
+            intersect: false
+        },
+        legend: {
+            position: 'top'
+        },
+        title: {
+            text: 'Transaction Status Distribution by Department',
+            align: 'center',
+            style: {
+                fontSize: '16px'
+            }
+        },
+        responsive: [{
+            breakpoint: 768,
+            options: {
+                chart: {
+                    height: 300
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }]
+    };
+
+    // Destroy previous chart if it exists
+    if (chartContainer._apexChart) {
+        chartContainer._apexChart.destroy();
+    }
+
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+
+    chartContainer._apexChart = chart;
+}
+
+
+
+//Chart 6 Treemap
+let transactionTreemapChart;
+function renderTransactionTreemapChart(data) {
+    const container = document.getElementById('transactionTreemapChart');
+
+    // Handle empty case
+    if (!data.data || !data.data.length) {
+        container.innerHTML = "<p class='text-center py-4'>No data available</p>";
+        return;
+    }
+
+    // Unpack data
+    const labels = data.data.map(item => item.rawLabel);
+    const values = data.data.map(item => item.value);
+    const parents = data.data.map(item => item.parent);
+    const hoverTexts = data.data.map(item => item.label);
+    const colors = data.data.map(item => item.backgroundColor || '#ccc');
+
+    // Clear previous content if any
+    container.innerHTML = "";
+
+    Plotly.newPlot(container, [{
+        type: "treemap",
+        labels: labels,
+        values: values,
+        parents: parents,
+        textinfo: "label+value+percent parent",
+        texttemplate: "%{label}<br>%{value} (%{percentParent:.1%})",
+        hovertext: hoverTexts,
+        hoverinfo: "text",
+        marker: {
+            colors: colors,
+            line: { width: 1, color: "#fff" }
+        },
+        branchvalues: "total" // Ensures values are split by children
+    }], {
+        title: { text: "Transaction Type Distribution (Treemap)" },
+        margin: { t: 50, l: 0, r: 0, b: 0 },
+        height: 500
+    }, {
+        responsive: true
+    });
+}
+
+
+
+
+
+// Chart 7 Heatmap
+let transactionHeatmapChartTime;
+function renderTransactionHeatmapTime(data) {
+    const chartEl = document.querySelector("#heatmap");
+
+    if (!chartEl) {
+        console.warn("Heatmap container not found.");
+        return;
+    }
+
+    // Destroy previous instance if exists
+    if (transactionHeatmapChartTime) {
+        transactionHeatmapChartTime.destroy();
+    }
+
+    if (!data || !data.series.length || !data.categories.length) {
+        console.warn("No data for transaction heatmap.");
+        return;
+    }
+
+    const options = {
+        chart: {
+            height: 450,
+            type: 'heatmap',
+            toolbar: { show: false }
+        },
+        dataLabels: {
+            enabled: true
+        },
+        colors: ["#008FFB"],
+        xaxis: {
+            type: 'category',
+            categories: data.categories,
+            title: {
+                text: 'Date',
+                style: { fontSize: '14px' }
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Transaction Type',
+                style: { fontSize: '14px' }
+            }
+        },
+        title: {
+            text: 'Transaction Requests Heatmap',
+            align: 'left',
+            style: { fontSize: '16px' }
+        },
+        tooltip: {
+            y: {
+                formatter: function (val) {
+                    return val + " transactions";
+                }
+            }
+        },
+        series: data.series
+    };
+
+    transactionHeatmapChartTime = new ApexCharts(chartEl, options);
+    transactionHeatmapChartTime.render();
+}
+
+
+// Chart 8 Heatmap by Hour
+let transactionHeatmapByHourChart;
+
+function renderTransactionHeatmapByHour(data) {
+    const el = document.querySelector("#heatmapByHour");
+    if (!el) return;
+
+    if (transactionHeatmapByHourChart) transactionHeatmapByHourChart.destroy();
+
+    // Filter series to include only 6 AM to 5 PM
+    const allowedHours = Array.from({ length: 12 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`);
+    const filteredSeries = data.series.filter(s => allowedHours.includes(s.name));
+
+    const options = {
+        chart: {
+            height: 500,
+            type: 'heatmap',
+            toolbar: { show: false }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        colors: ["#008FFB"],
+        xaxis: {
+            type: 'category',
+            categories: data.categories,
+            title: { text: 'Date' }
+        },
+        yaxis: {
+            title: { text: 'Hour of Day' }
+        },
+        title: {
+            text: 'Hourly Transaction Heatmap (6 AM - 5 PM)',
+            align: 'left'
+        },
+        tooltip: {
+            y: {
+                formatter: val => `${val} transactions`
+            }
+        },
+        series: filteredSeries
+    };
+
+    transactionHeatmapByHourChart = new ApexCharts(el, options);
+    transactionHeatmapByHourChart.render();
+}
+
+
+
+//Chart 9 line Graph
+let forecastLineChart;
+
+function renderForecastChart(data) {
+    const el = document.querySelector("#forecastChart");
+    if (!el) return;
+
+    if (forecastLineChart) forecastLineChart.destroy();
+
+    const todayIndex = data.labels.findIndex(label => label === "Today");
+    const tomorrowIndex = data.labels.findIndex(label => label === "Tomorrow");
+    const actualYesterday = data.series[todayIndex - 1] ?? 0;
+    const forecastToday = data.series[todayIndex] ?? 0;
+    const actualToday = data.series.find((_, i) => i === todayIndex - 1) ?? 0;
+
+    // === Update Forecast Summary Card ===
+    const trendIcon = document.getElementById("forecastTrendIcon");
+    const forecastVal = document.getElementById("forecastTodayValue");
+    const actualVal = document.getElementById("actualTodayValue");
+
+    const isUp = forecastToday >= actualYesterday;
+    forecastVal.textContent = forecastToday;
+    actualVal.textContent = actualToday;
+
+    trendIcon.innerHTML = isUp
+      ? '<i class="bi bi-arrow-up text-success ms-2"></i>'
+      : '<i class="bi bi-arrow-down text-danger ms-2"></i>';
+
+    // === Prepare area and dashed line chart ===
+    const actualData = [];
+    const projectedData = [];
+    const connectorData = [];
+
+    data.series.forEach((val, i) => {
+        if (i < todayIndex) {
+            actualData.push(val);
+            projectedData.push(null);
+            connectorData.push(null);
+        } else if (i === todayIndex) {
+            actualData.push(null);
+            projectedData.push(val);
+            connectorData[todayIndex - 1] = data.series[todayIndex - 1];
+            connectorData[todayIndex] = val;
+        } else {
+            actualData.push(null);
+            projectedData.push(val);
+            connectorData.push(null);
+        }
+    });
+
+    forecastLineChart = new ApexCharts(el, {
+        chart: {
+            type: 'line',
+            height: 350,
+            toolbar: { show: false }
+        },
+        title: {
+            text: 'Transaction Forecast (Actual vs Projected)',
+            align: 'left'
+        },
+        xaxis: {
+            categories: data.labels,
+            labels: { rotate: -45 }
+        },
+        yaxis: {
+            title: { text: 'Transactions' },
+            min: 0
+        },
+        series: [
+            {
+                name: 'Actual Count',
+                data: actualData,
+                type: 'area'
+            },
+            {
+                name: 'Projected Count',
+                data: projectedData,
+                type: 'area'
+            },
+            {
+                name: 'Projection Link',
+                data: connectorData,
+                type: 'line',
+                stroke: {
+                    dashArray: 6
+                }
+            }
+        ],
+        stroke: {
+            curve: 'smooth',
+            width: [2, 2, 2]
+        },
+        fill: {
+            type: ['gradient', 'gradient', 'solid'],
+            gradient: {
+                shadeIntensity: 0.5,
+                opacityFrom: 0.6,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        colors: ['#00C49F', '#FF8042', '#999999'],
+        markers: { size: 4 },
+        tooltip: {
+            y: {
+                formatter: val => val !== null ? `${val} transactions` : ''
+            }
+        }
+    });
+
+    forecastLineChart.render();
+}
+
+function generateColorPalette(count) {
+    const base = ['#4dc9f6', '#f67019', '#f53794', '#537bc4', '#acc236', '#166a8f', '#00a950', '#58595b'];
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+        colors.push(base[i % base.length]);
+    }
+    return colors;
+}
+
+
+window.addEventListener("DOMContentLoaded", loadStatistics);
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const deptSel   = document.getElementById('departmentFilter');
+    const courseSel = document.getElementById('courseFilter');
+
+    // 1. Load all departments
+    fetch('api/departments/')                  // ← your Django view endpoint
+      .then(res => res.json())
+      .then(depts => {
+        // clear existing (except “All”)
+        deptSel.querySelectorAll('option[data-dynamic]').forEach(o => o.remove());
+        depts.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.id;
+          opt.text  = d.name;
+          opt.setAttribute('data-dynamic','1');
+          deptSel.add(opt);
+        });
+      })
+      .catch(console.error);
+
+    // 2. When department changes, fetch courses
+    deptSel.addEventListener('change', () => {
+      const deptId = deptSel.value;
+      let url = 'api/courses/';
+      if (deptId) url += `?department=${encodeURIComponent(deptId)}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(courses => {
+          // clear existing (except “All”)
+          courseSel.querySelectorAll('option[data-dynamic]').forEach(o => o.remove());
+          courses.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.text  = c.name;
+            opt.setAttribute('data-dynamic','1');
+            courseSel.add(opt);
+          });
+        })
+        .catch(console.error);
+    });
+  });
+</script>
+<script>
+    function generateReport() {
+    const params = new URLSearchParams({
+        campus: document.getElementById("campusFilter").value,
+        department: document.getElementById("departmentFilter").value,
+        course: document.getElementById("courseFilter").value,
+        time: document.getElementById("timeFilter").value
+    }).toString();
+
+    window.open(`print/?${params}`, "_blank");
+}
+
+</script>
+
+{% endblock %}

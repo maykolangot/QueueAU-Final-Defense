@@ -1,0 +1,1366 @@
+{% extends 'base-user.html' %}
+
+{% block content %}
+
+<body>
+<div>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</div>
+
+<div class="dashboard-container">
+    <!-- Header Section with Window Info and Current Queue -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="window-info">
+                <div class="window-badge">
+                    <div class="window-header">
+                        <i class="bi bi-display"></i>
+                        <h5 class="window-label text-muted">Window Number:</h5>
+                        
+                    </div>
+                </div>
+                <span class="window-number" id="window">{{ user.windowNum }}</span>
+                <div class="mode-indicator">
+                    <span class="mode-label">Processing Mode:</span>
+                    <span class="mode-value" id="mode">{{ user.get_process_mode_display }}</span>
+                </div>
+                
+
+            </div>
+            
+            <div class="current-queue-card">
+                <div class="queue-header">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Current Queue</span>
+                </div>
+                <div id="queue-info">
+                    <!-- Current queue will be populated dynamically -->
+                    <p>No queue currently in process.</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons (below header) -->
+    <div class="action-buttons queue-controls">
+        <button class="action-btn primary" onclick="processNextQueue()">
+            <div class="btn-icon">
+                <i class="bi bi-arrow-right-circle"></i>
+            </div>
+            <span>Next Queue</span>
+        </button>
+        
+        <button class="action-btn secondary" onclick="holdCurrentQueue()">
+            <div class="btn-icon">
+                <i class="bi bi-pause-circle"></i>
+            </div>
+            <span>Hold</span>
+        </button>
+        
+        <button class="action-btn danger" onclick="skipCurrentQueue()">
+            <div class="btn-icon">
+                <i class="bi bi-x-circle"></i>
+            </div>
+            <span>Cancel</span>
+        </button>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Next 10 in Queue (left side) -->
+        <div class="content-card">
+            <div class="card-header">
+                <h3><i class="bi bi-list-ol"></i> Next 10 in Queue</h3>
+                <div class="refresh-indicator">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </div>
+            </div>
+            <div class="queue-list-container" id="updateUpcomingQueues">
+                <ul id="queue-list" class="queue-list">
+                    <!-- Queue items will be populated dynamically -->
+                    <li class="list-group-item text-muted">Loading...</li>
+
+                </ul>
+            </div>
+        </div>
+
+        <!-- On-Hold Transactions (right side) -->
+        <div class="content-card">
+            <div class="card-header">
+                <h3><i class="bi bi-pause-circle"></i> On-Hold Transactions</h3>
+                <div class="search-container">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="holdSearch" placeholder="Search by queue number or name">
+                </div>
+            </div>
+            <div class="hold-table-container">
+                <table class="hold-table">
+                    <thead>
+                        <tr>
+                            <th>Queue Number</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdListBody">
+                        <!-- On-hold transactions will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+        
+
+    <!-- Forecast Section -->
+    <div class="forecast-section">
+        <div class="forecast-card">
+            <div class="forecast-header">
+                <h3><i class="bi bi-graph-up"></i> Forecast Summary</h3>
+                <div class="forecast-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Today:</span>
+                        <span class="stat-value" id="forecastTodayValue">45</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Yesterday:</span>
+                        <span class="stat-value" id="actualTodayValue">38</span>
+                    </div>
+                    <span id="forecastTrendIcon"></span>
+                </div>
+            </div>
+            <div id="forecastChart" class="chart-container"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<!--FORECAST-->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    fetchForecastData();
+});
+
+function fetchForecastData() {
+    fetch("forecast-chart-data/")
+        .then(response => response.json())
+        .then(data => {
+            renderForecastChart(data);
+        })
+        .catch(error => {
+            console.error("Failed to fetch forecast chart data:", error);
+        });
+}
+
+//Chart 9 line Graph
+let forecastLineChart;
+
+function renderForecastChart(data) {
+    const el = document.querySelector("#forecastChart");
+    if (!el) return;
+
+    if (forecastLineChart) forecastLineChart.destroy();
+
+    const todayIndex = data.labels.findIndex(label => label === "Today");
+    const tomorrowIndex = data.labels.findIndex(label => label === "Tomorrow");
+    const actualYesterday = data.series[todayIndex - 1] ?? 0;
+    const forecastToday = data.series[todayIndex] ?? 0;
+    const actualToday = data.series.find((_, i) => i === todayIndex - 1) ?? 0;
+
+    // === Update Forecast Summary Card ===
+    const trendIcon = document.getElementById("forecastTrendIcon");
+    const forecastVal = document.getElementById("forecastTodayValue");
+    const actualVal = document.getElementById("actualTodayValue");
+
+    const isUp = forecastToday >= actualYesterday;
+    forecastVal.textContent = forecastToday;
+    actualVal.textContent = actualToday;
+
+    trendIcon.innerHTML = isUp
+      ? '<i class="bi bi-arrow-up text-success ms-2"></i>'
+      : '<i class="bi bi-arrow-down text-danger ms-2"></i>';
+
+    // === Prepare area and dashed line chart ===
+    const actualData = [];
+    const projectedData = [];
+    const connectorData = [];
+
+    data.series.forEach((val, i) => {
+        if (i < todayIndex) {
+            actualData.push(val);
+            projectedData.push(null);
+            connectorData.push(null);
+        } else if (i === todayIndex) {
+            actualData.push(null);
+            projectedData.push(val);
+            connectorData[todayIndex - 1] = data.series[todayIndex - 1];
+            connectorData[todayIndex] = val;
+        } else {
+            actualData.push(null);
+            projectedData.push(val);
+            connectorData.push(null);
+        }
+    });
+
+    forecastLineChart = new ApexCharts(el, {
+        chart: {
+            type: 'line',
+            height: 350,
+            toolbar: { show: false },
+            background: 'transparent'
+        },
+        title: {
+            text: 'Transaction Forecast (Actual vs Projected)',
+            align: 'left',
+            style: {
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#374151'
+            }
+        },
+        xaxis: {
+            categories: data.labels,
+            labels: { 
+                rotate: -45,
+                style: {
+                    colors: '#6b7280'
+                }
+            }
+        },
+        yaxis: {
+            title: { 
+                text: 'Transactions',
+                style: {
+                    color: '#6b7280'
+                }
+            },
+            min: 0,
+            labels: {
+                style: {
+                    colors: '#6b7280'
+                }
+            }
+        },
+        series: [
+            {
+                name: 'Actual Count',
+                data: actualData,
+                type: 'area'
+            },
+            {
+                name: 'Projected Count',
+                data: projectedData,
+                type: 'area'
+            },
+            {
+                name: 'Projection Link',
+                data: connectorData,
+                type: 'line',
+                stroke: {
+                    dashArray: 6
+                }
+            }
+        ],
+        stroke: {
+            curve: 'smooth',
+            width: [2, 2, 2]
+        },
+        fill: {
+            type: ['gradient', 'gradient', 'solid'],
+            gradient: {
+                shadeIntensity: 0.5,
+                opacityFrom: 0.6,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        colors: ['#10b981', '#f59e0b', '#6b7280'],
+        markers: { size: 4 },
+        tooltip: {
+            y: {
+                formatter: val => val !== null ? `${val} transactions` : ''
+            }
+        },
+        legend: {
+            position: 'top',
+            horizontalAlign: 'left',
+            labels: {
+                colors: '#6b7280'
+            }
+        }
+    });
+
+    forecastLineChart.render();
+}
+</script>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.querySelector('.toggle-btn');
+        sidebar.classList.toggle('collapsed');
+        toggleBtn.classList.toggle('collapsed');
+    }
+
+    function loadContent(event, link) {
+    event.preventDefault();
+    const url = link.getAttribute("href");
+
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            const main = document.querySelector(".main-content");
+            main.innerHTML = html;
+
+            // Reinitialize dynamic parts
+            if (typeof updateQueueDisplay === "function") {
+                updateQueueDisplay();
+            }
+            if (typeof fetchDashboardData === "function") {
+                fetchDashboardData();
+            }
+        })
+        .catch(error => {
+            console.error("Failed to load content:", error);
+        });
+    }
+
+    function fetchDashboardData() {
+        fetch("{% url 'cashier_dashboard_data' %}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) return;
+
+                document.getElementById("mode").textContent = data.processing_mode;
+                document.getElementById("email").textContent = data.email;
+                document.getElementById("window").textContent = data.window_number;
+                
+
+            });
+    }
+
+    setInterval(fetchDashboardData, 1000); // every 1 second
+
+function updateQueueDisplay() {
+    fetch("{% url 'get_current_queue' %}")
+        .then(response => response.json())
+        .then(data => {
+            const display = document.getElementById("queue-info");
+            if (data.queue_number) {
+                let studentIdLine = "";
+                if (data.student_id) {
+    studentIdLine = `
+        <div class="student-id">
+            <strong>Student ID:</strong> 
+            <span id="student-id-text">${data.student_id}</span>
+            <button class="copy-btn" onclick="copyStudentId('${data.student_id}', event)">
+                <i class="bi bi-files"></i>
+            </button>
+        </div>`;
+}
+
+                display.innerHTML = `
+                    <div class="current-queue-active">
+                        <div class="queue-number">${data.queue_number}</div>
+                        <div class="queue-details">
+                            <div class="detail-item">
+                                <span class="label">Student Name:</span>
+                                <span class="value">${data.requester}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Type:</span>
+                                <span class="value">${data.role}</span>
+                            </div>
+                            ${studentIdLine}
+                        </div>
+                    </div>
+                `;
+            } else {
+                display.innerHTML = `
+                    <div class="no-queue">
+                        <i class="bi bi-inbox"></i>
+                        <p>No queue currently in process</p>
+                    </div>
+                `;
+            }
+        });
+}
+
+// 📋 Copy to clipboard function
+function copyStudentId(studentId, event) {
+    navigator.clipboard.writeText(studentId).then(() => {
+        const btn = event.currentTarget;
+        btn.innerHTML = '<i class="bi bi-check-circle text-success"></i>'; // ✅ green check
+        setTimeout(() => {
+            btn.innerHTML = '<i class="bi bi-files"></i>'; // reset to copy icon
+        }, 2000);
+    });
+}
+
+
+    
+    function processNextQueue() {
+    fetch("{% url 'next_queue' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken(),
+            "Content-Type": "application/json"
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Next queue response:", data);
+        updateQueueDisplay();
+    })
+    .catch(error => console.error("POST failed:", error));
+}
+
+    function skipCurrentQueue() {
+        fetch("{% url 'skip_queue' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+                "Content-Type": "application/json"
+            }
+        }).then(updateQueueDisplay);
+    }
+
+    // Initial load + polling every 1 seconds
+    updateQueueDisplay();
+    setInterval(updateQueueDisplay, 1000);
+
+    const csrftoken = "{{ csrf_token }}";
+
+    function getCSRFToken() {
+        const name = 'csrftoken';
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const c = cookies[i].trim();
+            if (c.startsWith(name + '=')) {
+                return decodeURIComponent(c.substring(name.length + 1));
+            }
+        }
+        return null;
+    }
+
+function updateUpcomingQueues() {
+    fetch("{% url 'next_queues_list' %}", {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to fetch queue data.');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const queueList = document.getElementById('queue-list');
+        if (!queueList) {
+            console.warn('Element #queue-list not found in the DOM.');
+            return;
+        }
+
+        queueList.innerHTML = ''; // Clear existing list
+
+        if (!data.queues || data.queues.length === 0) {
+            const emptyMsg = document.createElement('li');
+            emptyMsg.className = 'queue-item empty';
+            emptyMsg.innerHTML = `
+                <i class="bi bi-inbox"></i>
+                <span>No queues currently.</span>
+            `;
+            queueList.appendChild(emptyMsg);
+            return;
+        }
+
+        data.queues.forEach(item => {
+            const entry = document.createElement('li');
+            entry.className = 'queue-item';
+            entry.innerHTML = `
+                <div class="queue-info">
+                    <div class="queue-number">#${item.queue_number}</div>
+                    <div class="queue-meta">
+                        <span class="priority-badge ${item.priority ? 'priority' : 'standard'}">
+                            ${item.priority ? 'Priority' : 'Standard'}
+                        </span>
+                        <span class="queue-time">${item.created_at}</span>
+                    </div>
+                </div>
+            `;
+            queueList.appendChild(entry);
+        });
+    })
+    .catch(error => {
+        console.error('Error during fetch:', error);
+        const queueList = document.getElementById('queue-list');
+        if (queueList) {
+            queueList.innerHTML = '<li class="queue-item error"><i class="bi bi-exclamation-triangle"></i><span>Failed to load queue.</span></li>';
+        }
+    });
+}
+
+setInterval(updateUpcomingQueues, 1000); // every 10 seconds
+
+    // Hold current Queue
+    function updateHoldList() {
+        fetch("{% url 'list_on_hold_transactions' %}")
+            .then(res => res.json())
+            .then(data => {
+                const body = document.getElementById("holdListBody");
+                const search = document.getElementById("holdSearch").value.toLowerCase();
+                body.innerHTML = "";
+
+                data.holds.forEach(txn => {
+                    if (
+                        txn.queue_number.toLowerCase().includes(search) ||
+                        txn.name.toLowerCase().includes(search)
+                    ) {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td><span class="queue-number">${txn.queue_number}</span></td>
+                            <td><span class="customer-name">${txn.name}</span></td>
+                            <td><span class="transaction-type">${txn.type}</span></td>
+                            <td class="action-buttons">
+                                <button class="btn-complete" onclick="updateHoldStatus(${txn.id}, 'completed')">
+                                    <i class="bi bi-check-circle"></i>
+                                    Complete
+                                </button>
+                                <button class="btn-cancel" onclick="updateHoldStatus(${txn.id}, 'cancelled')">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancel
+                                </button>
+                            </td>
+                        `;
+                        body.appendChild(row);
+                    }
+                });
+            });
+    }
+
+    // Call at least once!
+    updateHoldList();
+
+    function holdCurrentQueue() {
+        fetch("{% url 'hold_queue' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+                "Content-Type": "application/json"
+            }
+        })
+        .then(() => {
+            updateQueueDisplay();
+            updateHoldList();
+        });
+    }
+
+    function updateHoldStatus(id, status) {
+        fetch("{% url 'update_hold_status' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ id, status })
+        }).then(() => updateHoldList());
+    }
+
+    document.getElementById("holdSearch").addEventListener("input", updateHoldList);
+    setInterval(updateHoldList, 10000); // refresh every 10 sec
+    updateHoldList();
+</script>
+
+<script>
+function loadNextQueues() {
+        fetch("{% url 'next_queues_list' %}")
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('queue-list');
+                list.innerHTML = ""; // Clear current list
+                if (data.queues && data.queues.length) {
+                    data.queues.forEach(txn => {
+                        const item = document.createElement('li');
+                        item.className = 'queue-item';
+                        item.innerHTML = `
+                            <div class="queue-info">
+                                <div class="queue-number">#${txn.queue_number}</div>
+                                <div class="queue-meta">
+                                    <span class="priority-badge ${txn.priority ? 'priority' : 'standard'}">
+                                        ${txn.priority ? 'Priority' : 'Standard'}
+                                    </span>
+                                    <span class="queue-time">${txn.created_at}</span>
+                                </div>
+                            </div>
+                        `;
+                        list.appendChild(item);
+                    });
+                } else {
+                    list.innerHTML = '<li class="queue-item empty"><i class="bi bi-inbox"></i><span>No queues available</span></li>';
+                }
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", loadNextQueues);
+</script>
+
+<style>
+    .copy-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 1.2rem;
+    color: #f59e0b; /* golden/yellow to match student ID block */
+    transition: color 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+}
+
+.copy-btn:hover {
+    color: #d97706; /* darker amber on hover */
+}
+
+
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: 
+            radial-gradient(circle at 20% 80%, rgba(30, 64, 175, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+            linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        min-height: 100vh;
+        color: #374151;
+        position: relative;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231e40af' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    .dashboard-container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+        min-height: 100vh;
+    }
+
+    /* Header Section */
+    .dashboard-header {
+        margin-bottom: 2rem;
+    }
+
+    .header-content {
+        display: flex;
+        flex-direction: row;
+        gap: 2rem;
+        width: 100%;
+        align-items: stretch;
+        justify-content: space-between;
+    }
+
+    .window-info {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.5rem;
+        min-height: 200px;
+        flex: 0 0 30%;
+    }
+
+    .current-queue-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem 1rem 2rem 2rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .window-info {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.5rem;
+        min-height: 200px;
+        flex: 0 0 40%;
+    }
+
+    .window-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0;
+        margin-top: 0;
+        width: 100%;
+    }
+
+    .window-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+
+    .window-badge i {
+        font-size: 1.5rem;
+        color: #1e40af;
+    }
+
+    .window-number {
+        font-size: 6rem;
+        font-weight: 800;
+        color: #1f2937;
+        background: linear-gradient(135deg, #1e40af, #fbbf24);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 4px 8px rgba(30, 64, 175, 0.3);
+        align-self: flex-start;
+        margin-left: 2.5rem;
+        margin-top: auto;
+        margin-bottom: auto;
+        text-align: left;
+        width: auto;
+    }
+
+    .window-label {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #6b7280;
+        margin-left: 0.5rem;
+    }
+
+    .mode-indicator {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 200px;
+        justify-content: flex-start;
+        margin-top: auto;
+    }
+
+    .mode-label {
+        font-size: 1rem;
+        color: #6b7280;
+        font-weight: 700;
+    }
+
+    .mode-value {
+        font-size: 1rem;
+        color: #1f2937;
+        font-weight: 600;
+        padding: 0.375rem 0.75rem;
+        background: rgba(30, 64, 175, 0.1);
+        border-radius: 6px;
+        min-width: 80px;
+        text-align: left;
+        border: 1px solid rgba(30, 64, 175, 0.2);
+    }
+
+
+
+
+
+    .queue-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        color: #6b7280;
+        font-weight: 600;
+    }
+
+    .queue-header i {
+        font-size: 1.25rem;
+        color: #1e40af;
+    }
+
+    .queue-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .no-queue {
+        text-align: center;
+        color: #9ca3af;
+    }
+
+    .no-queue i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .current-queue-active {
+        text-align: center;
+        width: 100%;
+    }
+
+    .current-queue-active .queue-number {
+        font-size: 6rem;
+        font-weight: 800;
+        color: #1e40af;
+        margin-bottom: 1rem;
+        text-shadow: 0 4px 8px rgba(30, 64, 175, 0.3);
+    }
+
+
+
+    .queue-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(30, 64, 175, 0.1);
+        border-radius: 10px;
+    }
+
+    .detail-item .label {
+        font-weight: 600;
+        color: #6b7280;
+    }
+
+    .detail-item .value {
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .student-id {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(245, 158, 11, 0.1);
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    /* Action Buttons */
+    .queue-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10rem;
+        margin-bottom: 4rem;
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 2rem;
+        flex-wrap: nowrap;
+    }
+
+    .action-btn {
+        background: white;
+        border: none;
+        border-radius: 20px;
+        padding: 1.5rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 2px solid transparent;
+        font-weight: 700;
+        font-size: 1.25rem;
+        min-height: 120px;
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .action-btn:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        border-color: #1e40af;
+    }
+
+    .action-btn.primary {
+        background: white;
+        color: #1e40af;
+        border-color: #1e40af;
+    }
+
+    .action-btn.primary:hover {
+        background: #1e40af;
+        color: white;
+    }
+
+    .action-btn.secondary {
+        background: white;
+        color: #f59e0b;
+        border-color: #f59e0b;
+    }
+
+    .action-btn.secondary:hover {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .action-btn.danger {
+        background: white;
+        color: #ef4444;
+        border-color: #ef4444;
+    }
+
+    .action-btn.danger:hover {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-icon {
+        font-size: 4rem;
+    }
+
+    /* Content Grid */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .right-side-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /* Make full-width cards span two columns */
+    .content-card.full-width, .queue-controls.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .content-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(30, 64, 175, 0.1);
+    }
+
+    .card-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .card-header h3 i {
+        color: #1e40af;
+    }
+
+    .refresh-indicator {
+        color: #6b7280;
+        font-size: 1.25rem;
+        animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .search-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-container i {
+        position: absolute;
+        left: 1rem;
+        color: #6b7280;
+        z-index: 1;
+    }
+
+    .search-container input {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 2px solid rgba(30, 64, 175, 0.2);
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.8);
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        width: 420px;
+        max-width: 100%;
+    }
+
+    .search-container input:focus {
+        outline: none;
+        border-color: #1e40af;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    }
+
+    /* Queue List */
+    .queue-list-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .queue-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .queue-item {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(30, 64, 175, 0.1);
+        border-radius: 15px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .queue-item:hover {
+        background: rgba(30, 64, 175, 0.05);
+        transform: translateX(5px);
+    }
+
+    .queue-item.loading {
+        justify-content: center;
+        color: #6b7280;
+    }
+
+    .queue-item.empty {
+        justify-content: center;
+        color: #9ca3af;
+        text-align: center;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .queue-item.error {
+        justify-content: center;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    .loading-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(30, 64, 175, 0.3);
+        border-top: 2px solid #1e40af;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .queue-info {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .queue-number {
+        font-weight: 700;
+        color: #1f2937;
+        font-size: 1.125rem;
+    }
+
+    .queue-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+    }
+
+    .priority-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .priority-badge.priority {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .priority-badge.standard {
+        background: rgba(30, 64, 175, 0.1);
+        color: #1e40af;
+    }
+
+    .queue-time {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    /* Hold Table */
+    .hold-table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 15px;
+        border: 1px solid rgba(30, 64, 175, 0.1);
+    }
+
+    .hold-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .hold-table th {
+        background: rgba(30, 64, 175, 0.1);
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #1f2937;
+        border-bottom: 2px solid rgba(30, 64, 175, 0.2);
+    }
+
+    .hold-table td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(30, 64, 175, 0.1);
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .hold-table tr:hover td {
+        background: rgba(30, 64, 175, 0.05);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-start;
+    }
+
+    .btn-complete, .btn-cancel {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-block;
+        min-width: 80px;
+        text-align: center;
+    }
+
+    .btn-complete {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .btn-complete:hover {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-cancel {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    .btn-cancel:hover {
+        background: #ef4444;
+        color: white;
+    }
+
+    /* Forecast Section */
+    .forecast-section {
+        margin-top: 2rem;
+    }
+
+    .forecast-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+    }
+
+    .forecast-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(30, 64, 175, 0.1);
+    }
+
+    .forecast-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .forecast-header h3 i {
+        color: #1e40af;
+    }
+
+    .forecast-stats {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .chart-container {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .header-content {
+            gap: 1.5rem;
+        }
+        
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .queue-controls {
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+        
+        .window-number {
+            font-size: 1.25rem;
+        }
+
+        .window-label { font-size: 1rem; }
+        .mode-label { font-size: 0.95rem; }
+        .mode-value { font-size: 1.125rem; }
+        
+        .current-queue-active .queue-number {
+            font-size: 4rem;
+        }
+        
+        .forecast-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .search-container input {
+            width: 200px;
+        }
+    }
+
+    /* Scrollbar Styling */
+    .queue-list-container::-webkit-scrollbar,
+    .hold-table-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .queue-list-container::-webkit-scrollbar-track,
+    .hold-table-container::-webkit-scrollbar-track {
+        background: rgba(30, 64, 175, 0.1);
+        border-radius: 10px;
+    }
+
+    .queue-list-container::-webkit-scrollbar-thumb,
+    .hold-table-container::-webkit-scrollbar-thumb {
+        background: rgba(30, 64, 175, 0.3);
+        border-radius: 10px;
+    }
+
+    .queue-list-container::-webkit-scrollbar-thumb:hover,
+    .hold-table-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(30, 64, 175, 0.5);
+    }
+</style>
+
+</body>
+{% endblock %}
+

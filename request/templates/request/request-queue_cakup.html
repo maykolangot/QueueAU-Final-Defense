@@ -1,0 +1,197 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Generate Queue | QueueAU</title>
+
+  <!-- Bootstrap / Icons / AOS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"/>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+  <style>
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, rgba(0, 33, 71, 0.9), rgba(255, 193, 7, 0.6)),
+                  url('{% static "images/bg.png" %}') no-repeat center center/cover;
+      min-height: 100vh;
+      margin: 0;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-wrap { flex: 1 0 auto; display: flex; align-items: center; justify-content: center; padding: 32px 20px; text-align: center; }
+    .logo { width: 90px; height: 90px; object-fit: cover; }
+    .glass {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .form-card { max-width: 520px; width: 100%; padding: 24px; text-align: left; color: #fff; }
+    .form-card h1 { font-weight: 700; margin: 0.25rem 0 0.75rem; }
+    .subtitle { color: rgba(255,255,255,0.85); margin-bottom: 1.25rem; }
+    .form-card label { font-weight: 600; margin-bottom: .25rem; }
+    .form-card .input-group > input,
+    .form-card input,
+    .form-card select {
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #e5e7eb;
+      border-radius: 10px !important;
+      height: 42px;
+      padding: .5rem .75rem;
+      font-size: .95rem;
+      color: #1f2937;
+    }
+    .btn-primary { background-color: #ffc107; border: none; color: #1f2937; font-weight: 700; }
+    .btn-primary:hover { background-color: #e0ac06; color:#111827; }
+    .btn-success { background-color: #28a745; border: none; font-weight: 700; }
+    .btn-success:hover { background-color: #218838; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 14px 0; color: rgba(255,255,255,0.8); }
+    .divider::before, .divider::after { content: ""; height: 1px; flex: 1; background: rgba(255,255,255,0.35); }
+    .invalid-feedback { display: block; color: #ffdde5; font-size: 0.9rem; margin-top: .35rem; }
+    .toast-container { z-index: 9999; }
+    footer { flex-shrink: 0; text-align: center; padding: 24px 16px; color: rgba(255,255,255,0.8); }
+  </style>
+</head>
+<body>
+
+  <!-- Toasts -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    {% for message in messages %}
+      <!-- keep toast visible until user closes it -->
+      <div class="toast align-items-center text-bg-{{ message.tags|default:'info' }} border-0"
+           role="alert" aria-live="assertive" aria-atomic="true"
+           data-bs-autohide="false">
+        <div class="d-flex">
+          <div class="toast-body">{{ message }}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="page-wrap">
+    <div class="form-card glass" data-aos="zoom-in" data-aos-duration="700">
+      <div class="text-center mb-3">
+        <img src="{% static 'images/aulogo.png' %}" alt="QueueAU Logo" class="logo rounded-circle shadow-sm">
+      </div>
+
+      <h1 class="h3"><i class="bi bi-qr-code-scan me-2"></i>Generate Queue</h1>
+      <p class="subtitle">Create a ticket for your transaction quickly and securely.</p>
+
+      <!-- Step 1: Transaction Selection -->
+      <form id="transaction-form" method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Transaction For -->
+        <div class="mb-3">
+          {{ form.transaction_for.label_tag }}
+          {{ form.transaction_for }}
+        </div>
+
+        <!-- Transaction Type -->
+        <div class="mb-3">
+          {{ form.transactionType.label_tag }}
+          {{ form.transactionType }}
+        </div>
+
+        <button type="button" id="proceed-btn" class="btn btn-primary w-100">
+          <i class="bi bi-arrow-right-circle me-2"></i>Proceed to Scan
+        </button>
+      </form>
+
+      <!-- Step 2: QR Code Input (hidden until step 1) -->
+      <form id="scan-form" method="post" style="display:none;" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+          {{ form.qrId.label_tag }}
+          {{ form.qrId }}
+        </div>
+      </form>
+
+      <div class="divider my-3">or</div>
+
+      <!-- Quick Queue Button -->
+      <form action="{% url 'new_enrollee_quick_queue' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success w-100">
+          <i class="bi bi-lightning-charge-fill me-2"></i>
+          Quick Queue (For Upcoming Freshmens)
+        </button>
+      </form>
+
+      <div class="mt-3 text-center">
+        <a href="/" class="text-warning text-decoration-none fw-semibold">
+          <i class="bi bi-house-door-fill me-1"></i>Back to Homepage
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer>© 2025 QueueAU | PHINMA AU South Campus</footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init();
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // 1) SHOW TOASTS (no autohide) so success is readable
+      const toasts = document.querySelectorAll('.toast');
+      toasts.forEach(el => {
+        const t = bootstrap.Toast.getOrCreateInstance(el, { autohide: false });
+        t.show();
+      });
+      // OPTIONAL: bring the first toast into view
+      if (toasts.length) {
+        toasts[0].scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+
+      // 2) Two-step logic
+      const proceedBtn = document.getElementById('proceed-btn');
+      const scanForm  = document.getElementById('scan-form');
+      const qrField   = document.getElementById('{{ form.qrId.id_for_label }}');
+
+      if (proceedBtn) {
+        proceedBtn.addEventListener('click', function() {
+          scanForm.style.display = 'block';
+          // small delay so the field is painted before focus (prevents some scanners from missing focus)
+          setTimeout(() => qrField && qrField.focus(), 50);
+        });
+      }
+
+      // 3) Debounced auto-submit for QR scans
+      let submitTimer = null;
+      if (qrField) {
+        qrField.addEventListener('input', function() {
+          const val = qrField.value.trim();
+          clearTimeout(submitTimer);
+          if (!val) return;
+
+          // wait a brief moment to let barcode/QR scanners finish typing the full UUID
+          submitTimer = setTimeout(() => {
+            // Submit the scan form
+            scanForm.submit();
+
+            // If the page doesn't navigate (e.g., validation error), keep the message readable,
+            // then reset and re-focus after 1.5s so staff can see the success toast.
+            setTimeout(() => {
+              if (document.visibilityState === 'visible') {
+                qrField.value = '';
+                qrField.focus();
+              }
+            }, 1500);
+          }, 250);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

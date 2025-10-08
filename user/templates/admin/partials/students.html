@@ -1,0 +1,231 @@
+{% extends 'admin/dashboard-admin.html' %}
+
+{% block content %}
+<div class="container my-4">
+    <h2 class="mb-4">Student List</h2> 
+
+    <!-- Priority Request Button -->
+    <div class="mb-3 d-flex justify-content-end">
+        <button type="button" class="btn btn-warning position-relative" data-bs-toggle="modal" data-bs-target="#priorityModal">
+          
+            Review Priority Requests
+            {% if priority_count > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ priority_count }}
+                <span class="visually-hidden">unread messages</span>
+            </span>
+            {% endif %}
+        </button>
+    </div>
+
+
+    <form method="get" action="{% url 'student_list' %}" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" name="q" placeholder="Search by name or student ID" value="{{ query }}">
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </form>
+
+    {% if students %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Student ID</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>
+                        <a href="#" class="text-decoration-none" onclick="loadTransactions({{ student.id }})">
+                            {{ student.name }}
+                        </a>
+                    </td>
+                    <td>{{ student.studentId }}</td>
+                    <td>{{ student.email }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination controls -->
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if students.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ students.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+    
+            {% for num in students.paginator.page_range %}
+                {% if students.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+    
+            {% if students.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ students.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+</div>
+
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="txnModal" tabindex="-1" aria-labelledby="txnModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="txnModalLabel">Transactions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+            <table class="table table-striped" id="txn-table"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Priority Modal -->
+<div class="modal fade" id="priorityModal" tabindex="-1" aria-labelledby="priorityModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form method="post" action="{% url 'update_priority_requests' %}">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Priority Management</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <ul class="nav nav-tabs mb-3" id="priorityTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests-tab-pane" type="button" role="tab">Requests</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved-tab-pane" type="button" role="tab">Approved</button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="priorityTabsContent">
+            <!-- Tab 1: Requests -->
+            <div class="tab-pane fade show active" id="requests-tab-pane" role="tabpanel">
+              {% if priority_requests %}
+              <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Name</th>
+                      <th>Student ID</th>
+                      <th>Approve</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for student in priority_requests %}
+                    <tr>
+                      <td>{{ student.name }}</td>
+                      <td>{{ student.studentId }}</td>
+                      <td>
+                        <input type="checkbox" name="approved_ids" value="{{ student.id }}">
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <p class="text-muted">No students have requested priority.</p>
+              {% endif %}
+            </div>
+
+            <!-- Tab 2: Approved -->
+            <div class="tab-pane fade" id="approved-tab-pane" role="tabpanel">
+              {% if approved_students %}
+              <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Name</th>
+                      <th>Student ID</th>
+                      <th>Revoke</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for student in approved_students %}
+                    <tr>
+                      <td>{{ student.name }}</td>
+                      <td>{{ student.studentId }}</td>
+                      <td>
+                        <input type="checkbox" name="revoked_ids" value="{{ student.id }}">
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <p class="text-muted">No students have approved priority.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Save Changes</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+<script>
+function loadTransactions(studentId) {
+    fetch(`/user/admin/dashboard/search/${studentId}/transactions/`)
+    .then(response => response.json())
+    .then(data => {
+        const table = document.getElementById("txn-table");
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Queue #</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.transactions.map(txn => `
+                    <tr>
+                        <td>${txn.queueNumber}</td>
+                        <td>${txn.type}</td>
+                        <td>${txn.status}</td>
+                        <td>${txn.priority ? 'Yes' : 'No'}</td>
+                        <td>${txn.created}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
+        document.getElementById("txnModalLabel").textContent = `Transactions for ${data.student_name}`;
+        new bootstrap.Modal(document.getElementById("txnModal")).show();
+    });
+}
+</script>
+{% endblock %}
