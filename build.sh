@@ -11,5 +11,3 @@ python manage.py collectstatic --no-input
 python manage.py makemigrations core
 # Apply any outstanding database migrations
 python manage.py migrate
-
-celery -A QueueAU worker --loglevel=info --pool=solo 
