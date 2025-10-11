@@ -301,6 +301,76 @@ function renderForecastChart(data) {
 </script>
 
 <script>
+function updateQueueDisplay() {
+    fetch("{% url 'get_current_queue' %}")
+        .then(response => response.json())
+        .then(data => {
+            const display = document.getElementById("queue-info");
+            if (data.queue_number) {
+                let studentIdLine = "";
+                if (data.student_id) {
+                    studentIdLine = `
+                        <div class="student-id">
+                            <strong>Student ID:</strong> 
+                            <span id="student-id-text">${data.student_id}</span>
+                            <button class="copy-btn" onclick="copyStudentId('${data.student_id}', event)">
+                                <i class="bi bi-files"></i>
+                                <span class="tooltip">Copied!</span>
+                            </button>
+                        </div>`;
+                }
+
+                display.innerHTML = `
+                    <div class="current-queue-active">
+                        <div class="queue-number">${data.queue_number}</div>
+                        <div class="queue-details">
+                            <div class="detail-item">
+                                <span class="label">Student Name:</span>
+                                <span class="value">${data.requester}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Type:</span>
+                                <span class="value">${data.role}</span>
+                            </div>
+                            ${studentIdLine}
+                        </div>
+                    </div>
+                `;
+            } else {
+                display.innerHTML = `
+                    <div class="no-queue">
+                        <i class="bi bi-inbox"></i>
+                        <p>No queue currently in process</p>
+                    </div>
+                `;
+            }
+        });
+}
+
+// 📋 Copy to clipboard function with tooltip and icon feedback
+function copyStudentId(studentId, event) {
+    navigator.clipboard.writeText(studentId).then(() => {
+        const btn = event.currentTarget;
+        const icon = btn.querySelector("i");
+        const tooltip = btn.querySelector(".tooltip");
+
+        // Show tooltip
+        tooltip.classList.add("show");
+
+        // Change icon to green check
+        icon.className = "bi bi-check-circle text-success";
+
+        // Reset after 2 seconds
+        setTimeout(() => {
+            icon.className = "bi bi-files";
+            tooltip.classList.remove("show");
+        }, 2000);
+    });
+}
+</script>
+
+
+<script>
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const toggleBtn = document.querySelector('.toggle-btn');
@@ -347,64 +417,7 @@ function renderForecastChart(data) {
 
     setInterval(fetchDashboardData, 1000); // every 1 second
 
-function updateQueueDisplay() {
-    fetch("{% url 'get_current_queue' %}")
-        .then(response => response.json())
-        .then(data => {
-            const display = document.getElementById("queue-info");
-            if (data.queue_number) {
-                let studentIdLine = "";
-                if (data.student_id) {
-    studentIdLine = `
-        <div class="student-id">
-            <strong>Student ID:</strong> 
-            <span id="student-id-text">${data.student_id}</span>
-            <button class="copy-btn" onclick="copyStudentId('${data.student_id}', event)">
-                <i class="bi bi-files"></i>
-            </button>
-        </div>`;
-}
 
-                display.innerHTML = `
-                    <div class="current-queue-active">
-                        <div class="queue-number">${data.queue_number}</div>
-                        <div class="queue-details">
-                            <div class="detail-item">
-                                <span class="label">Student Name:</span>
-                                <span class="value">${data.requester}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="label">Type:</span>
-                                <span class="value">${data.role}</span>
-                            </div>
-                            ${studentIdLine}
-                        </div>
-                    </div>
-                `;
-            } else {
-                display.innerHTML = `
-                    <div class="no-queue">
-                        <i class="bi bi-inbox"></i>
-                        <p>No queue currently in process</p>
-                    </div>
-                `;
-            }
-        });
-}
-
-// 📋 Copy to clipboard function
-function copyStudentId(studentId, event) {
-    navigator.clipboard.writeText(studentId).then(() => {
-        const btn = event.currentTarget;
-        btn.innerHTML = '<i class="bi bi-check-circle text-success"></i>'; // ✅ green check
-        setTimeout(() => {
-            btn.innerHTML = '<i class="bi bi-files"></i>'; // reset to copy icon
-        }, 2000);
-    });
-}
-
-
-    
     function processNextQueue() {
     fetch("{% url 'next_queue' %}", {
         method: "POST",
@@ -614,21 +627,51 @@ function loadNextQueues() {
 </script>
 
 <style>
-    .copy-btn {
+.copy-btn {
+    position: relative;
+    background: none;
     border: none;
-    background: transparent;
     cursor: pointer;
-    margin-left: 8px;
-    font-size: 1.2rem;
-    color: #f59e0b; /* golden/yellow to match student ID block */
-    transition: color 0.2s ease-in-out;
-    display: flex;
+    padding: 5px;
+    font-size: 1.1rem;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
 }
 
-.copy-btn:hover {
-    color: #d97706; /* darker amber on hover */
+/* Tooltip base */
+.copy-btn .tooltip {
+    visibility: hidden;
+    opacity: 0;
+    background-color: rgba(51, 51, 51, 0.9);
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 4px 8px;
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    font-size: 0.75rem;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    white-space: nowrap;
+    pointer-events: none; /* avoids accidental hover flicker */
+    z-index: 10;
 }
+
+/* Tooltip visible state */
+.copy-btn .tooltip.show {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Optional: subtle hover feedback for button */
+.copy-btn:hover i {
+    color: #0d6efd; /* Bootstrap blue */
+    transition: color 0.2s ease;
+}
+
 
 
 

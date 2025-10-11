@@ -754,7 +754,10 @@
   let announcedSet = new Set();
 
   function speakAnnouncement(queueNumber, windowNumber) {
-    const msg = new SpeechSynthesisUtterance(`Now serving queue number ${queueNumber} at window number ${windowNumber}`);
+    const msg = new SpeechSynthesisUtterance(`
+    Now serving queue number ${queueNumber} at window number ${windowNumber}...
+    Now serving queue number ${queueNumber} at window number ${windowNumber}
+    `);
     msg.rate = 1;
     msg.pitch = 1;
     speechSynthesis.speak(msg);

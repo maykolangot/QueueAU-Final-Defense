@@ -309,17 +309,18 @@ def cashier_profile_content(request):
             request.session["password_otp"] = otp
 
             logger.debug(f"[OTP-GEN] Password change OTP for {user.email}: {otp}")
-            logger.info(f"Password change OTP generated and sent to {user.email}")
+            logger.info(f"Password change OTP generated and sending to {user.email}")
 
-            send_mail(
-                subject="OTP for Password Change",
-                message=f"Your OTP code is: {otp}",
-                from_email="noreply@phinmaed.com",
-                recipient_list=[user.email],
-                fail_silently=False
-            )
+            #Use your rolling email helper instead of send_mail
+            subject = "OTP for Password Change"
+            body = f"Your OTP code is: {otp}"
+            to_list = [user.email]
 
-            messages.success(request, "OTP sent to your email.")
+            if send_rolling_email(subject, body, to_list):
+                messages.success(request, "OTP sent to your email.")
+            else:
+                messages.error(request, "Failed to send OTP. Please try again later.")
+
             return redirect("verify_otp")
         else:
             logger.warning(f"Invalid password change form submitted by {user.email}")
@@ -917,7 +918,7 @@ def admin_dashboard(request):
                 'non_verified': non_verified,
                 'verified': verified,
             },
-            request=request  # ✅ This makes {% csrf_token %} work
+            request=request 
         )
         return HttpResponse(html)
 
@@ -957,33 +958,15 @@ def admin_dashboard_summary(request):
                 'non_verified': non_verified,
                 'verified': verified,
             },
-            request=request  # ✅ Required for {% csrf_token %} to work
+            request=request 
         )
         return HttpResponse(html)
 
     except User.DoesNotExist:
         return redirect('login')
 
+# Additional using the email helper
 
-def verify_cashier(request, pk):
-    user_id = request.session.get('user_id')
-    if not user_id:
-        logger.warning("Unauthenticated attempt to access verify_cashier.")
-        return redirect('login')
-
-    if not request.session.get('is_admin', False):
-        logger.warning(f"User ID {user_id} attempted unauthorized cashier verification.")
-        return render(request, 'unauthorized.html', {"message": "Admin access required."})
-
-    cashier = get_object_or_404(User, pk=pk, isAdmin=False)
-
-    if request.method == "POST":
-        cashier.verified = True
-        cashier.save()
-        messages.success(request, f"{cashier.name} has been verified.")
-        logger.info(f"Admin ID {user_id} verified cashier: ID={cashier.id}, Email={cashier.email}, Name={cashier.name}")
-
-    return redirect("cashier_list")
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -1146,15 +1129,32 @@ def verify_cashier(request, cashier_id):
         cashier.verified = True
         cashier.save()
         
-        # Send verification email
-        send_mail(
-            subject="Verification Successful",
-            message=f"Dear {cashier.name},\n\nYour cashier account has been verified and approved by the admin.",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[cashier.email],
+        # Email details
+        subject = "Verification Successful"
+        message = (
+            f"Dear {cashier.name},\n\n"
+            "Your cashier account has been verified and approved by the admin."
         )
-        messages.success(request, f"{cashier.name} has been verified.")
-    return redirect('cashier_list')
+
+        try:
+            success = send_rolling_email(
+                subject=subject,
+                body=message,
+                to_list=[cashier.email],
+            )
+
+            if success:
+                messages.success(request, f"{cashier.name} has been verified and notified by email.")
+            else:
+                messages.warning(request, f"{cashier.name} has been verified, but email sending failed.")
+
+        except Exception as e:
+            print(f"[❌ EMAIL ERROR] Could not send verification email: {e}")
+            messages.warning(request, f"{cashier.name} has been verified, but email sending encountered an error.")
+
+    return redirect("cashier_list")
+
+
 
 def reject_cashier(request, cashier_id):
     if request.method == "POST":

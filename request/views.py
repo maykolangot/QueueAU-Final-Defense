@@ -176,9 +176,11 @@ def register_guest(request):
 def generate_queue_number(priority: bool, created_at=None):
     prefix = 'P' if priority else 'S'
 
+    # Use Django's timezone-aware "now"
     if created_at is None:
-        created_at = now()
+        created_at = timezone.localtime(timezone.now())
 
+    # Normalize to the start of the local day using Django's timezone
     start_of_day = created_at.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = start_of_day + timedelta(days=1)
 
@@ -231,20 +233,21 @@ def request_queue(request):
                 )
                 return redirect('request_queue')
 
-            # --- Student restriction (only one active txn per day) ---
+            # --- Student restriction (only one active txn) ---
             if isinstance(requester, Student):
                 existing_txn = TransactionNF1.objects.filter(
                     student_id=requester.id,
-                    created_at__date=today
-                ).order_by('-created_at').first()
+                    status__in=[
+                        TransactionNF1.Status.ON_QUEUE,
+                        TransactionNF1.Status.ON_HOLD,
+                        TransactionNF1.Status.IN_PROCESS
+                    ]
+                ).exists()
 
-                if existing_txn and existing_txn.status not in [
-                    TransactionNF1.Status.COMPLETED,
-                    TransactionNF1.Status.CANCELLED,
-                    TransactionNF1.Status.CUT_OFF
-                ]:
-                    messages.error(request, "Student already has an active transaction today.")
+                if existing_txn:
+                    messages.error(request, "You already have an active transaction.")
                     return redirect('request_queue')
+
 
             # --- Ensure priority is defined ---
             if requester.priority is None:
