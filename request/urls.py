@@ -26,11 +26,11 @@ urlpatterns = [
     path('student/recover_qr/', recover_qr, name='recover_qr'),
 
     # Remove on the thingies
-    path('new-enrollee/', register_new_enrollee, name='register_new_enrollee'),
-    path('guest/', register_guest, name='register_guest'),
-    path('queue-request/', request_queue, name='request_queue'),
-    path('queue-request/new-enrollee/', new_enrollee_quick_queue, name='new_enrollee_quick_queue'),
-    path('queue-request/guest/', guest_quick_queue, name='guest'),
+    # path('new-enrollee/', register_new_enrollee, name='register_new_enrollee'),
+    # path('guest/', register_guest, name='register_guest'),
+    # path('queue-request/', request_queue, name='request_queue'),
+    # path('queue-request/new-enrollee/', new_enrollee_quick_queue, name='new_enrollee_quick_queue'),
+    # path('queue-request/guest/', guest_quick_queue, name='guest'),
 
     path('cashier_register/',register_view, name='register'),
     path('', index, name='index'),
