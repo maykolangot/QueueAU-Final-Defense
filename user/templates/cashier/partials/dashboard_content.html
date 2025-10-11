@@ -320,6 +320,18 @@ function updateQueueDisplay() {
                         </div>`;
                 }
 
+                // ✅ Format transaction info lines
+                const transactionLines = `
+                    <div class="detail-item">
+                        <span class="label">Transaction Type:</span>
+                        <span class="value">${data.transaction_type || "N/A"}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Transaction For:</span>
+                        <span class="value">${data.transaction_for ? data.transaction_for.replaceAll('_', ' ').toUpperCase() : "N/A"}</span>
+                    </div>
+                `;
+
                 display.innerHTML = `
                     <div class="current-queue-active">
                         <div class="queue-number">${data.queue_number}</div>
@@ -329,10 +341,11 @@ function updateQueueDisplay() {
                                 <span class="value">${data.requester}</span>
                             </div>
                             <div class="detail-item">
-                                <span class="label">Type:</span>
+                                <span class="label">Role:</span>
                                 <span class="value">${data.role}</span>
                             </div>
                             ${studentIdLine}
+                            ${transactionLines}
                         </div>
                     </div>
                 `;
@@ -344,8 +357,12 @@ function updateQueueDisplay() {
                     </div>
                 `;
             }
+        })
+        .catch(error => {
+            console.error("Error fetching queue data:", error);
         });
 }
+
 
 // 📋 Copy to clipboard function with tooltip and icon feedback
 function copyStudentId(studentId, event) {

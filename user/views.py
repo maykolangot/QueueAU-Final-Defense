@@ -631,7 +631,6 @@ def get_current_queue(request):
             reservedBy=user,
             status=Transaction.Status.IN_PROCESS,
             created_at__date=today,
-
         )
         .order_by("-created_at")
         .first()
@@ -663,13 +662,13 @@ def get_current_queue(request):
             "queue_number": txn.queueNumber,
             "requester": requester_name,
             "role": role,
-            "student_id": student_Id,        # formatted with dashes
-            "student_id_raw": student_Id_raw,# original from DB
-
+            "student_id": student_Id,         # formatted with dashes
+            "student_id_raw": student_Id_raw, # original from DB
+            "transaction_type": txn.transactionType,  # ✅ Added this line
+            "transaction_for": txn.transaction_for,   # (optional) also useful if you want term info
         })
 
     return JsonResponse({})
-
 
 
 @require_POST
