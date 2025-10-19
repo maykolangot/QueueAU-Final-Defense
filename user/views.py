@@ -1487,7 +1487,7 @@ def admin_statistics(request):
     return render(request, "admin/partials/statistics.html", context)
 
 
-
+# Modify This
 def get_date_range(time_filter):
     today = localdate()  # Asia/Manila local date
 
@@ -1866,7 +1866,9 @@ def hourly_heatmap_chart_data(request):
         "categories": dates
     })
 
+from datetime import date, timedelta
 
+# modify this also
 def forecast_chart_data(request):
     today = localdate()  # Asia/Manila local date
     current_time = now()  # timezone-aware datetime
@@ -1955,9 +1957,39 @@ def forecast_chart_data(request):
         values.append(round(projected_today))
 
     # Step 6: Forecast for tomorrow
-    forecast_tomorrow = sum(avg_by_hour.get(h, 0) for h in range(6, 18))
-    labels.append("Tomorrow")
-    values.append(round(forecast_tomorrow))
+    # Step 6: Forecast for next period (day/week/month)
+    next_label = None
+    next_forecast = 0
+
+    if time_filter in ["last_7_days", "today", "weekly"]:
+        # Next day (Tomorrow)
+        next_date = today + timedelta(days=1)
+        next_label = "Tomorrow"
+        next_forecast = sum(avg_by_hour.get(h, 0) for h in range(6, 18))
+
+    elif time_filter == "this_month":
+        # Next month (if exists)
+        next_month = today.month + 1 if today.month < 12 else 1
+        next_year = today.year if today.month < 12 else today.year + 1
+        next_label = f"{date(next_year, next_month, 1):%B}"
+        # Rough estimate: average daily * typical number of working days (22)
+        avg_daily = sum(values) / len(values) if values else 0
+        next_forecast = round(avg_daily * 22)
+
+    elif time_filter == "monthly":
+        # Next year forecast
+        next_label = str(today.year + 1)
+        avg_monthly = sum(values) / len(values) if values else 0
+        next_forecast = round(avg_monthly * 12)
+
+    else:
+        # Default: Tomorrow
+        next_label = "Tomorrow"
+        next_forecast = sum(avg_by_hour.get(h, 0) for h in range(6, 18))
+
+    labels.append(next_label)
+    values.append(round(next_forecast))
+
 
     return JsonResponse({
         "labels": labels,
